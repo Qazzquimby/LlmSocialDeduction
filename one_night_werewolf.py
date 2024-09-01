@@ -1,40 +1,48 @@
-import random
+from typing import List
 from player import Player
 from roles import assign_roles
 from game_state import GameState
 from conversation import handle_conversations
 
 class OneNightWerewolf:
-    def __init__(self, num_players, num_random_ai):
-        self.num_players = num_players
-        self.num_random_ai = num_random_ai
-        self.players = []
-        self.game_state = GameState()
+    def __init__(self, num_players: int, num_ai: int=None):
+        self.num_players: int = num_players
 
-    def setup_game(self):
+        if num_ai is None:
+            num_ai = num_players
+
+        self.num_ai: int = num_ai
+        self.players: List[Player] = []
+        self.game_state: GameState = GameState()
+
+    def setup_game(self) -> None:
         # Create players
         for i in range(self.num_players):
-            if i < self.num_random_ai:
+            if i < self.num_ai:
                 self.players.append(Player(f"Random AI {i+1}", agent_type='random'))
             else:
-                self.players.append(Player(f"Human Player {i+1-self.num_random_ai}", agent_type='human'))
+                self.players.append(Player(f"Human Player {i+1-self.num_ai}", agent_type='human'))
 
         # Assign roles
         center_cards = assign_roles(self.players)
         self.game_state.add_center_cards(center_cards)
+        self.game_state.set_players(self.players)
 
-    def play_night_phase(self):
+    def play_night_phase(self) -> None:
         print("\n--- Night Phase ---")
-        for player in self.players:
-            action = player.night_action(self.game_state)
-            if action:
-                self.game_state.record_night_action(player, action)
+        role_order = ["Werewolf", "Seer", "Robber", "Troublemaker"]
+        for role in role_order:
+            for player in self.players:
+                if player.role.name == role:
+                    action = player.night_action(self.game_state)
+                    if action:
+                        self.game_state.record_night_action(player, action)
 
-    def play_day_phase(self):
+    def play_day_phase(self) -> None:
         print("\n--- Day Phase ---")
         handle_conversations(self.players)
 
-    def voting_phase(self):
+    def voting_phase(self) -> List[Player]:
         print("\n--- Voting Phase ---")
         votes = {}
         for player in self.players:
@@ -58,7 +66,7 @@ class OneNightWerewolf:
 
         return executed_players
 
-    def check_win_condition(self, executed_players):
+    def check_win_condition(self, executed_players: List[Player]) -> None:
         werewolves = [p for p in self.players if p.role.name == "Werewolf"]
         
         if any(player in werewolves for player in executed_players):
@@ -68,7 +76,7 @@ class OneNightWerewolf:
         else:
             print("\nWerewolves win! No Werewolf was executed.")
 
-    def play_game(self):
+    def play_game(self) -> None:
         self.setup_game()
         self.play_night_phase()
         self.play_day_phase()
@@ -76,5 +84,5 @@ class OneNightWerewolf:
         self.check_win_condition(executed_players)
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=6, num_random_ai=3)
+    game = OneNightWerewolf(num_players=3)
     game.play_game()

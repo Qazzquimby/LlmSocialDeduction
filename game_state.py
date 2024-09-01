@@ -1,19 +1,29 @@
+from typing import List, Tuple, TYPE_CHECKING
+from roles import Role
+
+if TYPE_CHECKING:
+    from player import Player
+
 class GameState:
     def __init__(self):
-        self.center_cards = []
-        self.night_actions = []
-        self.day_actions = []
+        self.center_cards: List[Role] = []
+        self.night_actions: List[Tuple['Player', str]] = []
+        self.day_actions: List[Tuple['Player', str]] = []
+        self.players: List['Player'] = []
 
-    def add_center_cards(self, cards):
+    def add_center_cards(self, cards: List[Role]) -> None:
         self.center_cards = cards
 
-    def record_night_action(self, player, action):
+    def set_players(self, players: List['Player']) -> None:
+        self.players = players
+
+    def record_night_action(self, player: 'Player', action: str) -> None:
         self.night_actions.append((player, action))
 
-    def record_day_action(self, player, action):
+    def record_day_action(self, player: 'Player', action: str) -> None:
         self.day_actions.append((player, action))
 
-    def get_player_role(self, player):
+    def get_player_role(self, player: 'Player') -> Role:
         # This method might be used to get a player's current role,
         # considering any role switches that happened during the night
         return player.role
