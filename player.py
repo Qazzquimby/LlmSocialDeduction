@@ -38,6 +38,8 @@ class Player:
             question += f"\n{i}: {player.name}"
 
         vote = self.get_choice(question)
+        for player in players:
+            player.observations.append(f"{player.name} voted for {other_players[vote[0]].name}")
         return players[vote[0]]
 
     def get_choice(self, prompt: str) -> List[int]:
@@ -65,14 +67,14 @@ class Player:
 class HumanPlayer(Player):
     def speak(self) -> str:
         message = self.prompt_with(
-            "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear."
+            "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear. Keep it brief and don't teach basic strategy."
         )
         return message
 
     def prompt_with(self, prompt: str) -> str:
-        print("\n\n\n-------------\nCurrent observations:\n")
+        print("\n\n\n\n\n\n-------------\nCurrent observations:\n")
         for message in self.observations:
-            print(message)
+            print(message+"\n\n")
         return input(prompt)
 
     def think(self):

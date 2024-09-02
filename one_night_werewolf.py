@@ -52,7 +52,6 @@ class OneNightWerewolf:
         for player in self.players:
             voted_player = player.vote([p for p in self.players if p != player])
             votes[player] = voted_player
-            print(f"{player.name} voted for {voted_player.name}")
 
         # Count votes
         vote_count = {}

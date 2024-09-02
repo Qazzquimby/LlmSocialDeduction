@@ -9,7 +9,8 @@ os.environ["OPENAI_API_KEY"] = Path("openai_key.txt").read_text().strip()
 # os.environ["ANTHROPIC_API_KEY"] = Path("anthropic_key.txt").read_text().strip()
 
 # MODEL = "claude-3-5-sonnet-20240620"
-MODEL = "gpt-4o-mini"
+# MODEL = "gpt-4o-mini"
+MODEL = "gpt-4o-2024-08-06"
 
 class Prompt:
     def __init__(self):
