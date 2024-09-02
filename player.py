@@ -38,8 +38,6 @@ class Player:
             question += f"\n{i}: {player.name}"
 
         vote = self.get_choice(question)
-        for player in players:
-            player.observations.append(f"{player.name} voted for {other_players[vote[0]].name}")
         return players[vote[0]]
 
     def get_choice(self, prompt: str) -> List[int]:

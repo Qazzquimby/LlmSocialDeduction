@@ -1,6 +1,6 @@
 from typing import List
 from player import Player, HumanPlayer, AIPlayer
-from roles import assign_roles
+from roles import assign_roles, get_roles_in_game
 from game_state import GameState
 from conversation import handle_conversations
 
@@ -24,7 +24,10 @@ class OneNightWerewolf:
                 self.players.append(HumanPlayer(f"Human{i}"))
 
         # Assign roles
-        center_cards = assign_roles(self.players)
+        roles_in_game = get_roles_in_game(len(self.players))
+        center_cards = assign_roles(self.players, roles_in_game=roles_in_game)
+        for player in self.players:
+            player.observations.append(f"The full role pool in this game are: {', '.join([role.name for role in roles_in_game])}. Remember that 3 of them are in the center, not owned by other players.")
         self.game_state.add_center_cards(center_cards)
         self.game_state.set_players(self.players)
 
@@ -48,10 +51,15 @@ class OneNightWerewolf:
 
     def voting_phase(self) -> List[Player]:
         print("\n--- Voting Phase ---")
+
         votes = {}
         for player in self.players:
             voted_player = player.vote([p for p in self.players if p != player])
             votes[player] = voted_player
+
+        print("Votes:")
+        for player, voted_player in votes.items():
+            print(f"{player.name} voted for {voted_player.name}")
 
         # Count votes
         vote_count = {}
@@ -93,5 +101,5 @@ class OneNightWerewolf:
         self.check_win_condition(executed_players)
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=3, num_ai=2)
+    game = OneNightWerewolf(num_players=4, num_ai=2)
     game.play_game()
