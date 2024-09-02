@@ -1,27 +1,40 @@
+import random
 from typing import List
+
+from ai_personalities import PERSONALITIES
 from player import Player, HumanPlayer, AIPlayer
 from roles import assign_roles, get_roles_in_game
 from game_state import GameState
 from conversation import handle_conversations
 
 class OneNightWerewolf:
-    def __init__(self, num_players: int, num_ai: int=None):
+    def __init__(self, num_players: int, has_human: bool = False):
         self.num_players: int = num_players
-
-        if num_ai is None:
-            num_ai = num_players
-
-        self.num_ai: int = num_ai
+        self.has_human = has_human
         self.players: List[Player] = []
         self.game_state: GameState = GameState()
 
     def setup_game(self) -> None:
+        AI_POOL = PERSONALITIES.copy()
+
         # Create players
-        for i in range(self.num_players):
-            if i < self.num_ai:
-                self.players.append(AIPlayer(f"AI{i}"))
-            else:
-                self.players.append(HumanPlayer(f"Human{i}"))
+        if self.has_human:
+            num_ai = self.num_players-1
+            self.players.append(HumanPlayer(f"Human{i}"))
+        else:
+            num_ai = self.num_players
+
+        for i in range(num_ai):
+            name = random.choice(list(AI_POOL.keys()))
+            personality = AI_POOL[name]
+            del AI_POOL[name]
+
+            player = AIPlayer(name)
+            player.observations.append(f"Your name is {name}. Personality: {personality}.")
+            self.players.append(player)
+
+        for player in self.players:
+            player.observations.append(f"The players in this game are: {', '.join([p.name for p in self.players])}.")
 
         # Assign roles
         roles_in_game = get_roles_in_game(len(self.players))
@@ -101,5 +114,5 @@ class OneNightWerewolf:
         self.check_win_condition(executed_players)
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=4, num_ai=2)
+    game = OneNightWerewolf(num_players=4, has_human=True)
     game.play_game()
