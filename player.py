@@ -70,8 +70,8 @@ class HumanPlayer(Player):
         return message
 
     def prompt_with(self, prompt: str) -> str:
+        print("\n\n\n-------------\nCurrent observations:\n")
         for message in self.observations:
-            print("\n\n\n-------------\nCurrent observations:\n")
             print(message)
         return input(prompt)
 
@@ -86,10 +86,24 @@ class AIPlayer(Player):
 
     def prompt_with(self, prompt: str) -> str:
         litellm_prompt = Prompt().add_message(
-            "You're playing a social deduction game.", role="system"
+            f"You're playing a social deduction game. Your name is {self.name}", role="system"
         )
 
-        # todo add rules
+        # todo list roles in the game for this num players
+
+        litellm_prompt.add_message("""Rules:       
+        First there is a night phase where certain roles will act.
+        Werewolves will see the identities of other werewolves.
+        The seer will see the identities of another player or two of the unused identities.
+        The robber may steal a player's card and see what it is.
+        The troublemaker may swap two other players' cards without seeing them.
+        
+        During the day, each player will vote for someone to execute. The player with the most votes will be executed.
+        If a werewolf is executed, everyone not on the werewolf team wins.
+        If there is a werewolf in the game and they are not executed, the werewolf team wins.
+        
+        Perhaps obvious, werewolves should lie about who they are and invent a misleading cover identity.
+        """)
 
         litellm_prompt = litellm_prompt.add_message(
             "Your past observations are:", role="system"
