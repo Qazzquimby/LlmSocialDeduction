@@ -28,12 +28,16 @@ class OneNightWerewolf:
         self.game_state.add_center_cards(center_cards)
         self.game_state.set_players(self.players)
 
+    def think(self):
+        for player in self.players:
+            player.think()
+
     def play_night_phase(self) -> None:
         print("\n--- Night Phase ---")
         role_order = ["Werewolf", "Seer", "Robber", "Troublemaker"]
         for role in role_order:
             for player in self.players:
-                if player.role.name == role:
+                if player.original_role.name == role:
                     action = player.night_action(self.game_state)
                     if action:
                         self.game_state.record_night_action(player, action)
@@ -78,11 +82,17 @@ class OneNightWerewolf:
 
     def play_game(self) -> None:
         self.setup_game()
+        self.think()
+
         self.play_night_phase()
+        self.think()
+
         self.play_day_phase()
+        self.think()
+
         executed_players = self.voting_phase()
         self.check_win_condition(executed_players)
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=3)
+    game = OneNightWerewolf(num_players=3, num_ai=2)
     game.play_game()
