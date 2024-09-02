@@ -20,7 +20,7 @@ class OneNightWerewolf:
         # Create players
         if self.has_human:
             num_ai = self.num_players-1
-            self.players.append(HumanPlayer(f"Human{i}"))
+            self.players.append(HumanPlayer(f"Human"))
         else:
             num_ai = self.num_players
 
@@ -87,6 +87,9 @@ class OneNightWerewolf:
             print(f"\n{executed_players[0].name} has been executed!")
         else:
             print("\nIt's a tie! No one has been executed.")
+
+        for player in self.players:
+            print(f"{player.name} was a {player.role.name}.")
 
         return executed_players
 

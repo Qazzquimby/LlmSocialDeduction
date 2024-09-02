@@ -1,7 +1,7 @@
 def handle_conversations(players):
-    num_rounds = 3  # You can adjust this
+    num_rounds = 2  # You can adjust this
     for round_i in range(num_rounds):
-        print(f"\nConversation Round {round_i + 1}")
+        print(f"\nConversation Round {round_i + 1} / {num_rounds}")
         for player in players:
             message = player.speak()
             for listening_player in players:
