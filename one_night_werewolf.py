@@ -1,5 +1,5 @@
 from typing import List
-from player import Player
+from player import Player, HumanPlayer, AIPlayer
 from roles import assign_roles
 from game_state import GameState
 from conversation import handle_conversations
@@ -19,9 +19,9 @@ class OneNightWerewolf:
         # Create players
         for i in range(self.num_players):
             if i < self.num_ai:
-                self.players.append(Player(f"Random AI {i+1}", agent_type='random'))
+                self.players.append(AIPlayer(f"AI{i}"))
             else:
-                self.players.append(Player(f"Human Player {i+1-self.num_ai}", agent_type='human'))
+                self.players.append(HumanPlayer(f"Human{i}"))
 
         # Assign roles
         center_cards = assign_roles(self.players)

@@ -1,4 +1,3 @@
-import random
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,18 +30,15 @@ class Seer(Role):
 
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        print(f"{player.name}, choose a number:")
-        print("0: Look at two center cards")
-        for i, p in enumerate(players, 1):
-            if p != player:
-                print(f"{i}: Look at {p.name}'s card")
-        
-        choice = int(input("Enter your choice: "))
-        if choice == 0:
-            cards = random.sample(game_state.center_cards, max(2, len(game_state.center_cards)))
+        options = "0: Look at two center cards\n" + "\n".join([f"{i}: Look at {p.name}'s card" for i, p in enumerate(players, 1) if p != player])
+        prompt = f"{player.name}, choose a number:\n{options}\nEnter your choice:"
+        choice = player.get_choice(prompt)
+
+        if choice[0] == 0:
+            cards = game_state.center_cards[:2]
             return f"You see the following center cards: {cards[0].name}, {cards[1].name}"
-        elif 1 <= choice <= len(players):
-            target = players[choice - 1]
+        elif 1 <= choice[0] <= len(players):
+            target = players[choice[0] - 1]
             return f"You see that {target.name}'s role is: {target.role.name}"
         else:
             return "Invalid choice. You lose your night action."
@@ -53,14 +49,12 @@ class Robber(Role):
 
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        print(f"{player.name}, choose a player to rob:")
-        for i, p in enumerate(players, 1):
-            if p != player:
-                print(f"{i}: Rob {p.name}")
+        options = "\n".join([f"{i}: Rob {p.name}" for i, p in enumerate(players, 1) if p != player])
+        prompt = f"{player.name}, choose a player to rob:\n{options}\nEnter your choice:"
+        choice = player.get_choice(prompt)
         
-        choice = int(input("Enter your choice: "))
-        if 1 <= choice <= len(players):
-            target = players[choice - 1]
+        if 1 <= choice[0] <= len(players):
+            target = players[choice[0] - 1]
             player.role, target.role = target.role, player.role
             return f"You swapped roles with {target.name}. Your new role is: {player.role.name}"
         else:
@@ -72,23 +66,20 @@ class Troublemaker(Role):
 
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        print(f"{player.name}, choose two players to swap roles:")
-        for i, p in enumerate(players, 1):
-            if p != player:
-                print(f"{i}: {p.name}")
+        options = "\n".join([f"{i}: {p.name}" for i, p in enumerate(players, 1) if p != player])
+        prompt = f"{player.name}, choose two players to swap roles:\n{options}\nEnter the choices numbers of both players separated by a space, like `2 3`:"
+        choices = player.get_choice(prompt)
         
-        choice1 = int(input("Enter the number of the first player: "))
-        choice2 = int(input("Enter the number of the second player: "))
-        
-        if 1 <= choice1 <= len(players) and 1 <= choice2 <= len(players) and choice1 != choice2:
-            player1 = players[choice1 - 1]
-            player2 = players[choice2 - 1]
+        if len(choices) == 2 and 1 <= choices[0] <= len(players) and 1 <= choices[1] <= len(players) and choices[0] != choices[1]:
+            player1 = players[choices[0] - 1]
+            player2 = players[choices[1] - 1]
             player1.role, player2.role = player2.role, player1.role
             return f"You swapped the roles of {player1.name} and {player2.name}."
         else:
             return "Invalid choice. You lose your night action."
 
 def assign_roles(players: List["Player"]) -> List[Role]:
+    import random
     global_role_pool = [Werewolf(), Villager(), Seer(), Robber(), Troublemaker(), Villager(), Villager(), Villager()]
     role_pool_for_this_many_players = global_role_pool[:len(players)+3]
 

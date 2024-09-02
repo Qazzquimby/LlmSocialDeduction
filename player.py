@@ -1,14 +1,15 @@
-import random
 from typing import List, Optional, TYPE_CHECKING
+
+from core import Prompt
 from roles import Role
+from prompt_utils import prompt_agent
 
 if TYPE_CHECKING:
     from game_state import GameState
 
 class Player:
-    def __init__(self, name: str, agent_type: str = 'human'):
+    def __init__(self, name: str):
         self.name: str = name
-        self.agent_type: str = agent_type
         self.role: Optional[Role] = None
         self.original_role: Optional[Role] = None
         self.observations: List[str] = []
@@ -27,55 +28,83 @@ class Player:
         return None
 
     def speak(self) -> str:
-        if self.agent_type == 'human':
-            return self.human_speak()
-        elif self.agent_type == 'random':
-            return self.random_speak()
-        else:
-            raise ValueError(f"Unknown agent type: {self.agent_type}")
-
-    def human_speak(self) -> str:
-        print(f"\n{self.name}, here are your observations:")
-        for i, obs in enumerate(self.observations, 1):
-            print(f"{i}. {obs}")
-        return input(f"{self.name} (Human), enter your message: ")
-
-    def random_speak(self) -> str:
-        messages = [
-            "I think someone's lying!",
-            "I'm pretty sure I'm telling the truth.",
-            "Who do we suspect?",
-            "I have a hunch about this...",
-            "Let's think about this logically.",
-        ]
-        return f"{self.name} (Random AI): {random.choice(messages)}"
+        raise NotImplementedError("Subclass must implement abstract method")
 
     def vote(self, players: List['Player']) -> 'Player':
-        if self.agent_type == 'human':
-            return self.human_vote(players)
-        elif self.agent_type == 'random':
-            return self.random_vote(players)
-        else:
-            raise ValueError(f"Unknown agent type: {self.agent_type}")
+        raise NotImplementedError("Subclass must implement abstract method")
 
-    def human_vote(self, players: List['Player']) -> 'Player':
-        print(f"\n{self.name}, here are your observations:")
-        for i, obs in enumerate(self.observations, 1):
-            print(f"{i}. {obs}")
+    def get_choice(self, prompt: str) -> List[int]:
+        response = self.prompt_with(prompt + "\n Format: Step by step thinking, then {choice_number, choice name, why you chose that option instead of the others}.")
+
+        formatted_answer = response.split("{")[-1]
+        words = (formatted_answer
+                 .replace(",", " ")
+                 .replace('"', " ")
+                 .replace("'", " ")
+                 .replace(".", " ")
+                 .split(" "))
+
+        numbers = [int(word) for word in words if word.isnumeric()]
+        return numbers
+
+    def prompt_with(self, prompt: str) -> str:
+        raise NotImplementedError("Subclass must implement abstract method")
+
+class HumanPlayer(Player):
+    def speak(self) -> str:
+        observations = "\n".join([f"{i}. {obs}" for i, obs in enumerate(self.observations, 1)])
+        prompt = f"{self.name}, here are your observations:\n{observations}\nBased on these observations, what would you like to say?"
+        return prompt_agent(prompt)
+
+    def vote(self, players: List['Player']) -> 'Player':
+        observations = "\n".join([f"{i}. {obs}" for i, obs in enumerate(self.observations, 1)])
+        available_players = "\n".join([f"{i}. {player.name}" for i, player in enumerate(players, 1) if player != self])
+        prompt = f"{self.name}, here are your observations:\n{observations}\n\nAvailable players to vote for:\n{available_players}\nBased on your observations, which player number do you want to vote for?"
         
         while True:
-            print("\nAvailable players to vote for:")
-            for i, player in enumerate(players, 1):
-                if player != self:
-                    print(f"{i}. {player.name}")
+            choice = prompt_agent(prompt)
             try:
-                choice = int(input(f"{self.name}, enter the number of the player you want to vote for: "))
+                choice = int(choice)
                 if 1 <= choice <= len(players) and players[choice-1] != self:
                     return players[choice-1]
                 else:
-                    print("Invalid choice. Please try again.")
+                    prompt = "Invalid choice. Please try again. Which player number do you want to vote for?"
             except ValueError:
-                print("Please enter a valid number.")
+                prompt = "Please enter a valid number. Which player number do you want to vote for?"
 
-    def random_vote(self, players: List['Player']) -> 'Player':
-        return random.choice([p for p in players if p != self])
+    def prompt_with(self, prompt: str) -> str:
+        return input(prompt)
+
+class AIPlayer(Player):
+    def speak(self) -> str:
+        message = self.prompt_with("What would you like to say to the other players?")
+        return f"{self.name}(AI): {message}"
+
+    def vote(self, players: List['Player']) -> 'Player':
+        other_players = [other_player for other_player in players if other_player != self]
+        question = "Which player do you want to vote to execute?"
+        for i, player in enumerate(other_players):
+            question += f"\n{i}: {player.name}"
+
+        vote = self.get_choice(question)
+        return players[vote[0]]
+
+    def prompt_with(self, prompt: str) -> str:
+        litellm_prompt = Prompt().add_message(
+            "You're playing a social deduction game.", role="system"
+        )
+
+        # todo add rules
+
+        litellm_prompt = litellm_prompt.add_message(
+            "Your past observations are:", role="system"
+        )
+        for message in self.observations:
+            litellm_prompt = litellm_prompt.add_message(message, role="system")
+
+        litellm_prompt = litellm_prompt.add_message(prompt, role="system")
+        response = litellm_prompt.run()
+
+        self.observations.append(f"I am asked {prompt}\n\n I respond{response}\n\n\n")
+
+        return response
