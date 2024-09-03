@@ -79,7 +79,12 @@ class HumanPlayer(Player):
         pass
 
 
+
 class AIPlayer(Player):
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.total_cost = 0
+
     def speak(self) -> str:
         message = self.prompt_with("What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear.")
         return f"{self.name}(AI): {message}"
@@ -113,6 +118,7 @@ class AIPlayer(Player):
 
         litellm_prompt = litellm_prompt.add_message(prompt, role="system")
         response = litellm_prompt.run(should_print=False)
+        self.total_cost += litellm_prompt.total_cost
 
         self.observations.append(f"I am asked {prompt}\n\n I respond{response}\n\n\n")
 

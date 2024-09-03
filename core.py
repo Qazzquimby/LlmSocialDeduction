@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import litellm
-from litellm import completion
+from litellm import completion, completion_cost
 
 litellm.modify_params = True
 os.environ["OPENAI_API_KEY"] = Path("openai_key.txt").read_text().strip()
@@ -15,6 +15,7 @@ MODEL = "gpt-4o-2024-08-06"
 class Prompt:
     def __init__(self):
         self.messages = []
+        self.total_cost = 0
 
     def add_message(self, message: str, role="user"):
         if role not in ["user", "assistant", "system"]:
@@ -34,6 +35,8 @@ class Prompt:
         self.add_message(response_text, role="assistant")
         if should_print:
             print(f"Bot: {response_text}\n\n")
+
+        self.total_cost += completion_cost(completion_response=response)
         return response_text
 
 
