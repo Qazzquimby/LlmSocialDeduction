@@ -7,7 +7,8 @@ if TYPE_CHECKING:
     from game_state import GameState
 
 class Player:
-    def __init__(self, name: str):
+    def __init__(self, game, name: str):
+        self.game = game
         self.name: str = name
         self.role: Optional[Role] = None
         self.original_role: Optional[Role] = None
@@ -27,7 +28,7 @@ class Player:
         return None
 
     def speak(self) -> str:
-        raise NotImplementedError("Subclass must implement abstract method")
+        raise NotImplementedError
 
     def vote(self, players: List['Player']) -> 'Player':
         other_players = [other_player for other_player in players if
@@ -61,11 +62,13 @@ class Player:
         return numbers
 
     def prompt_with(self, prompt: str) -> str:
-        raise NotImplementedError("Subclass must implement abstract method")
+        raise NotImplementedError
 
     def think(self):
         raise NotImplementedError
 
+    def __str__(self):
+        return self.name
 
 class HumanPlayer(Player):
     def speak(self) -> str:
@@ -86,8 +89,8 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
-    def __init__(self, name: str, model, personality: str = None):
-        super().__init__(name)
+    def __init__(self, game, name: str, model, personality: str = None):
+        super().__init__(game, name)
         self.model=model
         self.personality = personality
 
@@ -109,22 +112,16 @@ class AIPlayer(Player):
             f"You're playing a social deduction game. Your name is {self.name}", role="system"
         )
 
-        litellm_prompt.add_message("""Rules:       
-        Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.
+        rules = "Rules:\n"
+        rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"
+        rules += "First there is a night phase where certain roles will act.\n"
         
-        First there is a night phase where certain roles will act.
-        Werewolves will see the identities of other werewolves.
-        The seer will see the identities of another player or two of the unused identities.
-        The robber may steal a player's card and see what it is.
-        The troublemaker may swap two other players' cards without seeing them.
-        There are no other roles and no other ways to gain information.
+        for role in set(player.role.__class__ for player in self.game.players):
+            rules += role().get_rules() + "\n"
         
-        During the day, each player will vote for someone to execute. The player with the most votes will be executed.
-        If a werewolf is executed, everyone not on the werewolf team wins.
-        If there is a werewolf in the game and they are not executed, the werewolf team wins.
-        
-        Perhaps obvious, werewolves should lie about who they are and invent a misleading cover identity with made up observations.
-        """)
+        rules += "\nDuring the day, each player will vote for someone to execute. The player with the most votes will be executed.\n"
+
+        litellm_prompt.add_message(rules)
 
         for message in self.observations:
             litellm_prompt = litellm_prompt.add_message(message, role="system")

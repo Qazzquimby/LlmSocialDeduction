@@ -13,6 +13,12 @@ class Role:
     def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
         return None
 
+    def get_rules(self) -> str:
+        raise NotImplementedError
+
+    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+        raise NotImplementedError
+
 
 class Werewolf(Role):
     def __init__(self):
@@ -25,10 +31,22 @@ class Werewolf(Role):
             w.name for w in other_werewolves) if other_werewolves else "no one"
         return f"You see that {other_werewolves_names} is/are also Werewolf/Werewolves."
 
+    def get_rules(self) -> str:
+        return "Werewolves will see the identities of other werewolves during the night phase. They win if no Werewolf is executed."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+        return not any(isinstance(p.role, Werewolf) for p in executed_players)
+
 
 class Villager(Role):
     def __init__(self):
         super().__init__("Villager")
+
+    def get_rules(self) -> str:
+        return "The Villager has no special abilities. They win if a Werewolf is executed or if there are no Werewolves in the game."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+        return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
 
 
 class Seer(Role):
@@ -52,6 +70,12 @@ class Seer(Role):
         else:
             return "Invalid choice. You lose your night action."
 
+    def get_rules(self) -> str:
+        return "The Seer will see the identities of another player or two of the unused identities during the night phase."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+        return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
+
 
 class Robber(Role):
     def __init__(self):
@@ -70,6 +94,12 @@ class Robber(Role):
             return f"You swapped roles with {target.name}. Your new role is: {player.role.name}"
         else:
             return "Invalid choice. You lose your night action."
+
+    def get_rules(self) -> str:
+        return "The Robber may steal a player's card and see what it is during the night phase."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+        return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
 
 
 class Troublemaker(Role):
@@ -92,12 +122,29 @@ class Troublemaker(Role):
         else:
             return "Invalid choice. You lose your night action."
 
+    def get_rules(self) -> str:
+        return "The Troublemaker may swap two other players' cards without seeing them during the night phase."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+        return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
+
+
+class Tanner(Role):
+    def __init__(self):
+        super().__init__("Tanner")
+
+    def get_rules(self) -> str:
+        return "The Tanner wins if they are executed. They lose in all other scenarios."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+        return player in executed_players
+
 
 def get_roles_in_game(num_players: int) -> List[Role]:
     global_role_pool = [
         Werewolf(), Werewolf(),
-        Seer(), Robber(), Troublemaker(),
-        Villager(), Villager(), Villager(), Villager()
+        Seer(), Robber(), Troublemaker(), Tanner(),
+        Villager(), Villager(), Villager()
     ]
     role_pool_for_this_many_players = global_role_pool[:num_players + 3]
     return role_pool_for_this_many_players
