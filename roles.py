@@ -43,10 +43,10 @@ class Seer(Role):
         prompt = f"{player.name}, choose a number:\n{options}\nEnter your choice:"
         choice = player.get_choice(prompt)
 
-        if choice[0] == 0:
+        if len(choice)>= 1 and choice[0] == 0:
             cards = game_state.center_cards[:2]
             return f"You see the following center cards: {cards[0].name}, {cards[1].name}"
-        elif 1 <= choice[0] <= len(players):
+        elif len(choice)>= 1 and 1 <= choice[0] <= len(players):
             target = players[choice[0] - 1]
             return f"You see that {target.name}'s role is: {target.role.name}"
         else:
@@ -64,7 +64,7 @@ class Robber(Role):
         prompt = f"{player.name}, choose a player to rob:\n{options}\nEnter your choice:"
         choice = player.get_choice(prompt)
 
-        if 1 <= choice[0] <= len(players):
+        if len(choice) >= 1 and 1 <= choice[0] <= len(players):
             target = players[choice[0] - 1]
             player.role, target.role = target.role, player.role
             return f"You swapped roles with {target.name}. Your new role is: {player.role.name}"

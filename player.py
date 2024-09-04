@@ -52,6 +52,9 @@ class Player:
                  .replace('"', " ")
                  .replace("'", " ")
                  .replace(".", " ")
+                 .replace("*", " ")
+                 .replace(":", " ")
+                 .replace("}", " ")
                  .split(" "))
 
         numbers = [int(word) for word in words if word.isnumeric()]
@@ -69,7 +72,7 @@ class HumanPlayer(Player):
         message = self.prompt_with(
             "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear. Keep it brief and don't teach basic strategy."
         )
-        return message
+        return f"Human: {message}"
 
     def prompt_with(self, prompt: str) -> str:
         print("\n\n\n\n\n\n-------------\nCurrent observations:\n")
@@ -93,7 +96,12 @@ class AIPlayer(Player):
         self.games_won = 0
 
     def speak(self) -> str:
-        message = self.prompt_with("What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear. Keep it brief.")
+        prompt = ""
+        if self.personality:
+            prompt += f"\nYour personality is: {self.personality}"
+        prompt += "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear. Keep it brief and focused."
+
+        message = self.prompt_with(prompt)
         return f"{self.name}({self.model}): {message}"
 
     def prompt_with(self, prompt: str) -> str:
@@ -120,9 +128,6 @@ class AIPlayer(Player):
 
         for message in self.observations:
             litellm_prompt = litellm_prompt.add_message(message, role="system")
-
-        if self.personality:
-            litellm_prompt = litellm_prompt.add_message(f"Your personality is: {self.personality}", role="system")
 
         litellm_prompt = litellm_prompt.add_message(prompt, role="system")
         response = litellm_prompt.run(model=self.model, should_print=False)
