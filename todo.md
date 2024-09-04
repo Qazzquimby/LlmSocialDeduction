@@ -1,4 +1,2 @@
-- Allow ais to have different models
-- Track model wins and total costs
 - add tanner role (wins only if he's executed)
 - make webui for human player

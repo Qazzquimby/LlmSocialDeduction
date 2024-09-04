@@ -32,8 +32,7 @@ class OneNightWerewolf:
 
             model = get_random_model()
 
-            player = AIPlayer(name=name, model=model)
-            player.observations.append(f"Your name is {name}. Personality: {personality}.")
+            player = AIPlayer(name=name, model=model, personality=personality)
 
             self.players.append(player)
 
@@ -110,11 +109,11 @@ class OneNightWerewolf:
             if isinstance(player, AIPlayer):
                 player_is_werewolf_team = player.role.name == "Werewolf"
                 if player_is_werewolf_team:
-                    player_won = not village_wins
+                    did_win = not village_wins
                 else:
-                    player_won = village_wins
+                    did_win = village_wins
 
-                performance_tracker.update_performance(player.model, player.total_cost, player_won)
+                performance_tracker.update_performance(player, did_win=did_win)
 
         performance_tracker.save_performance_data()
 

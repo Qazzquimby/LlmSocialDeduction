@@ -1,3 +1,4 @@
+import random
 from typing import List, Optional, TYPE_CHECKING
 from core import Prompt
 from roles import Role
@@ -36,7 +37,10 @@ class Player:
             question += f"\n{i}: {player.name}"
 
         vote = self.get_choice(question)
-        return players[vote[0]]
+        if vote:
+            return players[vote[0]]
+        else:
+            return random.choice(players)
 
     def get_choice(self, prompt: str) -> List[int]:
         response = self.prompt_with(
@@ -79,55 +83,58 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
-    def __init__(self, name: str, model):
+    def __init__(self, name: str, model, personality: str = None):
         super().__init__(name)
         self.model=model
+        self.personality = personality
+
         self.total_cost = 0
         self.games_played = 0
         self.games_won = 0
 
     def speak(self) -> str:
-        message = self.prompt_with("What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear.")
-        return f"{self.name}(AI - {self.model}): {message}"
+        message = self.prompt_with("What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear. Keep it brief.")
+        return f"{self.name}({self.model}): {message}"
 
     def prompt_with(self, prompt: str) -> str:
         litellm_prompt = Prompt().add_message(
             f"You're playing a social deduction game. Your name is {self.name}", role="system"
         )
 
-        # todo list roles in the game for this num players
-
         litellm_prompt.add_message("""Rules:       
+        Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.
+        
         First there is a night phase where certain roles will act.
         Werewolves will see the identities of other werewolves.
         The seer will see the identities of another player or two of the unused identities.
         The robber may steal a player's card and see what it is.
         The troublemaker may swap two other players' cards without seeing them.
+        There are no other roles and no other ways to gain information.
         
         During the day, each player will vote for someone to execute. The player with the most votes will be executed.
         If a werewolf is executed, everyone not on the werewolf team wins.
         If there is a werewolf in the game and they are not executed, the werewolf team wins.
         
-        Perhaps obvious, werewolves should lie about who they are and invent a misleading cover identity.
+        Perhaps obvious, werewolves should lie about who they are and invent a misleading cover identity with made up observations.
         """)
 
-        litellm_prompt = litellm_prompt.add_message(
-            "Your past observations are:", role="system"
-        )
         for message in self.observations:
             litellm_prompt = litellm_prompt.add_message(message, role="system")
+
+        if self.personality:
+            litellm_prompt = litellm_prompt.add_message(f"Your personality is: {self.personality}", role="system")
 
         litellm_prompt = litellm_prompt.add_message(prompt, role="system")
         response = litellm_prompt.run(model=self.model, should_print=False)
         self.total_cost += litellm_prompt.total_cost
 
-        self.observations.append(f"I am asked {prompt}\n\n I respond{response}\n\n\n")
+        self.observations.append(f"I was asked: {prompt}\n\n I responded: {response}\n\n\n")
 
         return response
 
     def think(self):
         self.prompt_with(
-            """Think privately. Your response will be available for your future selves to read. 
+            """Think privately. Your response is for you and you alone, so use whatever format is best for you. 
                     Think step by step. What strategy seems wise? What can you logically induce from your observations? How can you gain more information, built trust, or mislead your opponents?
                     """
         )

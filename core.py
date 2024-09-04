@@ -27,13 +27,20 @@ class Prompt:
         response = completion(
             model=model,
             messages=self.messages,
+            timeout=60,
+            num_retries=2,
         )
         response_text = response["choices"][0]["message"]["content"]
         self.add_message(response_text, role="assistant")
         if should_print:
             print(f"Bot: {response_text}\n\n")
 
-        self.total_cost += completion_cost(completion_response=response)
+        try:
+            total_cost = completion_cost(completion_response=response)
+        except:
+            total_cost = 0
+
+        self.total_cost += total_cost
         return response_text
 
 
