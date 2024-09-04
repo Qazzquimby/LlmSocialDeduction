@@ -6,7 +6,8 @@ from litellm import completion, completion_cost
 
 litellm.modify_params = True
 os.environ["OPENAI_API_KEY"] = Path("openai_key.txt").read_text().strip()
-# os.environ["ANTHROPIC_API_KEY"] = Path("anthropic_key.txt").read_text().strip()
+os.environ["ANTHROPIC_API_KEY"] = Path("anthropic_key.txt").read_text().strip()
+os.environ["OPENROUTER_API_KEY"] = Path("openrouter_key.txt").read_text().strip()
 
 class Prompt:
     def __init__(self):

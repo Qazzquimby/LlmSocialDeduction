@@ -1,3 +1,4 @@
+import random
 from typing import List
 
 from ai_models import get_random_model
@@ -23,18 +24,16 @@ class OneNightWerewolf:
         else:
             num_ai = self.num_players
 
-        # AI_POOL = PERSONALITIES.copy()
+        ai_pool = PERSONALITIES.copy()
         for i in range(num_ai):
-            # name = random.choice(list(AI_POOL.keys()))
-            # personality = AI_POOL[name]
-            # del AI_POOL[name]
+            name = random.choice(list(ai_pool.keys()))
+            personality = ai_pool[name]
+            del ai_pool[name]
 
             model = get_random_model()
-            name = f"{i}_{model}"
 
             player = AIPlayer(name=name, model=model)
-            player.observations.append(f"Your name is {name}.")
-            # player.observations.append(f"Your name is {name}. Personality: {personality}.")
+            player.observations.append(f"Your name is {name}. Personality: {personality}.")
 
             self.players.append(player)
 
