@@ -1,6 +1,7 @@
-import random
 from typing import List
 
+from ai_models import get_random_model
+from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, HumanPlayer, AIPlayer
 from roles import assign_roles, get_roles_in_game
@@ -15,8 +16,6 @@ class OneNightWerewolf:
         self.game_state: GameState = GameState()
 
     def setup_game(self) -> None:
-        AI_POOL = PERSONALITIES.copy()
-
         # Create players
         if self.has_human:
             num_ai = self.num_players-1
@@ -24,13 +23,19 @@ class OneNightWerewolf:
         else:
             num_ai = self.num_players
 
+        # AI_POOL = PERSONALITIES.copy()
         for i in range(num_ai):
-            name = random.choice(list(AI_POOL.keys()))
-            personality = AI_POOL[name]
-            del AI_POOL[name]
+            # name = random.choice(list(AI_POOL.keys()))
+            # personality = AI_POOL[name]
+            # del AI_POOL[name]
 
-            player = AIPlayer(name)
-            player.observations.append(f"Your name is {name}. Personality: {personality}.")
+            model = get_random_model()
+            name = f"{i}_{model}"
+
+            player = AIPlayer(name=name, model=model)
+            player.observations.append(f"Your name is {name}.")
+            # player.observations.append(f"Your name is {name}. Personality: {personality}.")
+
             self.players.append(player)
 
         for player in self.players:
@@ -95,13 +100,24 @@ class OneNightWerewolf:
 
     def check_win_condition(self, executed_players: List[Player]) -> None:
         werewolves = [p for p in self.players if p.role.name == "Werewolf"]
+        village_wins = any(player in werewolves for player in executed_players) or not werewolves
         
-        if any(player in werewolves for player in executed_players):
-            print("\nVillagers win! A Werewolf was executed.")
-        elif not werewolves:
-            print("\nVillagers win! There were no Werewolves in the game.")
+        if village_wins:
+            print("\nVillagers win!" + (" A Werewolf was executed." if werewolves else " There were no Werewolves in the game."))
         else:
             print("\nWerewolves win! No Werewolf was executed.")
+
+        for player in self.players:
+            if isinstance(player, AIPlayer):
+                player_is_werewolf_team = player.role.name == "Werewolf"
+                if player_is_werewolf_team:
+                    player_won = not village_wins
+                else:
+                    player_won = village_wins
+
+                performance_tracker.update_performance(player.model, player.total_cost, player_won)
+
+        performance_tracker.save_performance_data()
 
     def play_game(self) -> None:
         self.setup_game()

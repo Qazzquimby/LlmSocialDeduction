@@ -1,11 +1,9 @@
 from typing import List, Optional, TYPE_CHECKING
-
 from core import Prompt
 from roles import Role
 
 if TYPE_CHECKING:
     from game_state import GameState
-
 
 class Player:
     def __init__(self, name: str):
@@ -81,13 +79,16 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
-    def __init__(self, name: str):
+    def __init__(self, name: str, model):
         super().__init__(name)
+        self.model=model
         self.total_cost = 0
+        self.games_played = 0
+        self.games_won = 0
 
     def speak(self) -> str:
         message = self.prompt_with("What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear.")
-        return f"{self.name}(AI): {message}"
+        return f"{self.name}(AI - {self.model}): {message}"
 
     def prompt_with(self, prompt: str) -> str:
         litellm_prompt = Prompt().add_message(
@@ -117,7 +118,7 @@ class AIPlayer(Player):
             litellm_prompt = litellm_prompt.add_message(message, role="system")
 
         litellm_prompt = litellm_prompt.add_message(prompt, role="system")
-        response = litellm_prompt.run(should_print=False)
+        response = litellm_prompt.run(model=self.model, should_print=False)
         self.total_cost += litellm_prompt.total_cost
 
         self.observations.append(f"I am asked {prompt}\n\n I respond{response}\n\n\n")

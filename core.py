@@ -8,10 +8,6 @@ litellm.modify_params = True
 os.environ["OPENAI_API_KEY"] = Path("openai_key.txt").read_text().strip()
 # os.environ["ANTHROPIC_API_KEY"] = Path("anthropic_key.txt").read_text().strip()
 
-# MODEL = "claude-3-5-sonnet-20240620"
-# MODEL = "gpt-4o-mini"
-MODEL = "gpt-4o-2024-08-06"
-
 class Prompt:
     def __init__(self):
         self.messages = []
@@ -26,7 +22,7 @@ class Prompt:
         self.messages.append({"role": role, "content": message})
         return self
 
-    def run(self, model=MODEL, should_print=True) -> str:
+    def run(self, model, should_print=True) -> str:
         response = completion(
             model=model,
             messages=self.messages,
@@ -48,7 +44,7 @@ if system_message:
     past_messages.append({"role": "system", "content": system_message})
 
 
-def converse(initial_message: str = None):
+def converse(initial_message: str = None, model: str = "gpt-4o-2024-08-06"):
     if initial_message:
         past_messages.append({"role": "user", "content": initial_message})
 
@@ -68,7 +64,7 @@ def converse(initial_message: str = None):
 
         if initial_message:
             response = completion(
-                model=MODEL,
+                model=model,
                 messages=past_messages,
             )
             response_text = response["choices"][0]["message"]["content"]
@@ -86,7 +82,7 @@ def converse(initial_message: str = None):
             save_message(file=f, message=user_message)
 
             response = completion(
-                model=MODEL,
+                model=model,
                 messages=past_messages,
             )
             response_text = response["choices"][0]["message"]["content"]
