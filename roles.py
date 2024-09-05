@@ -1,10 +1,16 @@
 import random
-from typing import List, Optional, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import List, Optional, TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
     from game_state import GameState
     from player import Player
 
+
+@dataclass
+class RoleInteraction:
+    other_role: "Role"
+    interaction: str
 
 class Role:
     def __init__(self, name: str):
@@ -16,8 +22,31 @@ class Role:
     def get_rules(self) -> str:
         raise NotImplementedError
 
+    def get_strategy(self, game_state: GameState) -> str:
+        strategy = "\n".join(self.get_general_strategy_lines())
+
+        interaction_lines = []
+        for line in self.get_interaction_strategy_lines():
+            if line.other_role in game_state.role_pool:
+                interaction_lines.append(line.interaction)
+        strategy += "\n".join(interaction_lines)
+
+        return strategy
+
+    def get_general_strategy_lines(self) -> List[str]:
+        raise NotImplementedError
+
+    def get_interaction_strategy_lines(self)-> List[RoleInteraction]:
+        return []
+
     def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
         raise NotImplementedError
+
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 
 class Werewolf(Role):
@@ -27,15 +56,34 @@ class Werewolf(Role):
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         other_werewolves = [p for p in game_state.players if
                             p != player and isinstance(p.role, Werewolf)]
-        other_werewolves_names = ", ".join(
-            w.name for w in other_werewolves) if other_werewolves else "no one"
-        return f"You see that {other_werewolves_names} is/are also Werewolf/Werewolves."
+        if other_werewolves:
+            other_werewolves_names = ", ".join(
+                w.name for w in other_werewolves)
+            return f"You see that {other_werewolves_names} is/are also Werewolf/Werewolves."
+        else:
+            random_center_card = random.choice(game_state.center_cards)
+            return f"You see there is no other Werewolf. You see a {random_center_card.name} in the center."
 
     def get_rules(self) -> str:
-        return "Werewolves will see the identities of other werewolves during the night phase. They win if no Werewolf is executed."
+        return "Werewolves will see the identities of other werewolves during the night phase. If there are no other wereolves, they see a random center card. They win if no Werewolf is executed."
 
     def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
         return not any(isinstance(p.role, Werewolf) for p in executed_players)
+
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "Generally, it is best to claim Village roles that gain no or little information, like Troublemaker"
+        ]
+    def get_interaction_strategy_lines(self) -> List[RoleInteraction]:
+        return [
+            RoleInteraction(Tanner(), "You can also try to claim Werewolf, as no Werewolf would reveal themselves. This will likely make you called a Tanner, causing nobody to vote for you."),
+            RoleInteraction(Robber(), "You could claim Robber and say you robbed someone right as they claim"),
+            # RoleInteraction(Mason(), "If there is another Werewolf, both of you could claim to be Masons that saw each other, this will almost certainly be contradicted by someone so you need to be convincing"),
+            RoleInteraction(Seer(), "If you are a solo Werewolf, you can claim to be a Seer that saw the card you saw in the center and a Werewolf, since there is actually a Werewolf card in the center"),
+            # RoleInteraction(Drunk(), "If there are a lot of suspicious people, you can claim to be a Drunk as you likely saw a Village Team card, however if the village thinks there might be no Werewolves, they will likely kill you since you likely are a Werewolf now"),
+            RoleInteraction(Troublemaker(), "A risky yet effective strategy is to claim Troublemaker and claim to have swapped a fellow Werewolf with a non-Werewolf and have the fellow Werewolf out their role and claim that the non-Werewolf in now a Werewolf"),
+        ]
+
 
 
 class Villager(Role):
@@ -47,6 +95,14 @@ class Villager(Role):
 
     def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
         return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
+
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "The main strategy for a villager player involves manipulating one of the werewolves into claiming Villager, thus narrowing the number of suspects for team village.",
+            "Villager is a really attractive claim for a Werewolf or Dream Wolf as you're not given any secret information. Because of this you should never claim Villager initially, as it is a very suspicious claim.",
+            "Make false claims. This leaves fewer roles open for werewolves to claim safely. Werewolves don't want to narrow it down to two suspects.",
+            "Once you've located a werewolf, if you're also suspected of being a werewolf, call for a split vote between you and the werewolf, this is advantageous for team village, and the werewolf can't fight it without looking suspicious. Make sure to ask for all suspected werewolves to vote for you, so the werewolves can't ruin the vote.",
+        ]
 
 
 class Seer(Role):
@@ -76,6 +132,19 @@ class Seer(Role):
     def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
         return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
 
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "The Seer should almost always look at 2 center cards, not only do they gain more information this way, it's very easy to refute the Seer's claim about a player's role.",
+            "The Seer should debate on whether to reveal early or after someone claims a role she saw in the center but should never reveal what she saw in the center because they can wait too see if someone claims the role they saw",
+            "Claiming early will make you sound more trustworthy, and may make a solo Werewolf more wary of claiming the role they saw in the center, even if the Seer did not see the card messing up their claim",
+            "Waiting to claim until someone claims a role you saw in the center can make it more likely for you to be able to counter them, and if you wait even longer for someone to back up their claim means you can find who the Werewolves are easily, but you might be more suspicious for not claiming earlier"
+        ]
+    def get_interaction_strategy_lines(self) -> List[RoleInteraction]:
+        return [
+            # RoleInteraction(MysticWolf(), "If you view a player's card, If a Mystic Wolf is in play, you will be extremely suspicious for essentially preforming the Mystic Wolf's action and will likely be lynched."),
+            # RoleInteraction(Drunk(), "When the Drunk or Witch is in play, pay attention to which cards you viewed"),
+            # RoleInteraction(Witch(), "When the Drunk or Witch is in play, pay attention to which cards you viewed"),
+        ]
 
 class Robber(Role):
     def __init__(self):
@@ -101,6 +170,15 @@ class Robber(Role):
     def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
         return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
 
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "If the Robber steals a village card they can confirm them and back them up. Claim before they reveal to look more legitimate, though this may look like you're a werewolf giving another werewolf an alibi.",
+            "They can also say they robbed someone but won't reveal until later so that the person you robbed can lie, as otherwise their role would be confirmed and they could not lie",
+            "If you are now a Werewolf, say you robbed someone you didn't right after they claim as you now have an alibi that no one can really refute. Then, whoever the Werewolf you robbed is will still think they are a Werewolf and will act like a Werewolf so try and push them as much as possible and lead a victory to team Werewolf.",
+        ]
+    def get_interaction_strategy_lines(self) -> List[RoleInteraction]:
+        return [
+        ]
 
 class Troublemaker(Role):
     def __init__(self):
@@ -128,6 +206,14 @@ class Troublemaker(Role):
     def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
         return any(isinstance(p.role, Werewolf) for p in executed_players) or not werewolves_exist
 
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "Troublemaker can lie about who they swapped which may cause a werewolf to out themselves, thinking they're now a villager.",
+            "Since troublemaker gains no new information, it's very easy for a werewolf to pretend to be a troublemaker",
+        ]
+    def get_interaction_strategy_lines(self) -> List[RoleInteraction]:
+        return [
+        ]
 
 class Tanner(Role):
     def __init__(self):
@@ -138,6 +224,23 @@ class Tanner(Role):
 
     def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
         return player in executed_players
+
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "If you claim to have been a Werewolf, you will likely be called a Tanner as this is a very obvious play that no Werewolf would do (unless they want people to think they're a tanner).",
+            "A Tanner can claim to be a Tanner, as no Tanner would reveal themselves, and they will likely be called as a Werewolf.",
+            "In general, claiming something anyone else has claimed is a good strategy.",
+            "Pretending to be any role that gains information, but not having any information to share, may make the town think you're a struggling werewolf."
+        ]
+    def get_interaction_strategy_lines(self) -> List[RoleInteraction]:
+        return [
+            # RoleInteraction(Mason(), "Claiming Mason is suspicious so it might just get you killed, since if there is another Mason would see you and a solo Mason is suspicious."),
+            RoleInteraction(Robber(), "Claiming to be a Robber who robbed someone suspicious will direct suspicions towards you."),
+            # RoleInteraction(Drunk(), "A Strategy is to claim to be a Drunk if the Village thinks there might not be any Werewolves.")
+            # RoleInteraction(Doppleganger(), "Claiming Doppelganger is a bit finicky, if you claim to have viewed a role that someone isn't, or performing the role incorrectly you might get killed, but this is almost too subtle."),
+            # RoleInteraction(ParanormalInvestigator(), "Claiming Paranormal Investigator is a good idea since they are potentially a Werewolf now."),
+
+        ]
 
 
 def get_roles_in_game(num_players: int) -> List[Role]:

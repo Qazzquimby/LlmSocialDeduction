@@ -42,10 +42,14 @@ class OneNightWerewolf:
         # Assign roles
         roles_in_game = get_roles_in_game(len(self.players))
         center_cards = assign_roles(self.players, roles_in_game=roles_in_game)
+        self.game_state.role_pool = roles_in_game
         for player in self.players:
             player.observations.append(f"The full role pool in this game are: {', '.join([role.name for role in roles_in_game])}. Remember that 3 of them are in the center, not owned by other players.")
         self.game_state.add_center_cards(center_cards)
         self.game_state.set_players(self.players)
+
+        for player in self.players:
+            player.observations.append(f"Your role's strategy: {player.role.get_strategy(self.game_state)}\n")
 
     def think(self):
         for player in self.players:

@@ -10,6 +10,7 @@ class GameState:
         self.night_actions: List[Tuple['Player', str]] = []
         self.day_actions: List[Tuple['Player', str]] = []
         self.players: List['Player'] = []
+        self.role_pool: List[Role] = []
 
     def add_center_cards(self, cards: List[Role]) -> None:
         self.center_cards = cards
