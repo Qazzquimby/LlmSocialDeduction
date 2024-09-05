@@ -20,7 +20,7 @@ class OneNightWerewolf:
         # Create players
         if self.has_human:
             num_ai = self.num_players-1
-            self.players.append(HumanPlayer(f"Human"))
+            self.players.append(HumanPlayer(game=game, name=f"Human"))
         else:
             num_ai = self.num_players
 
@@ -32,7 +32,7 @@ class OneNightWerewolf:
 
             model = get_random_model()
 
-            player = AIPlayer(name=name, model=model, personality=personality)
+            player = AIPlayer(game=game, name=name, model=model, personality=personality)
 
             self.players.append(player)
 
@@ -97,22 +97,21 @@ class OneNightWerewolf:
         return executed_players
 
     def check_win_condition(self, executed_players: List[Player]) -> None:
-        werewolves = [p for p in self.players if p.role.name == "Werewolf"]
-        village_wins = any(player in werewolves for player in executed_players) or not werewolves
+        werewolves_exist = any([p for p in self.players if p.role.name == "Werewolf"])
         
-        if village_wins:
-            print("\nVillagers win!" + (" A Werewolf was executed." if werewolves else " There were no Werewolves in the game."))
-        else:
-            print("\nWerewolves win! No Werewolf was executed.")
+        winners = [p for p in self.players if p.role.did_win(p, executed_players, werewolves_exist)]
+
+        print("\nWinners:")
+        for player in winners:
+            print(f"{player.name} ({player.role.name})")
+        
+        print("\nFinal Roles:")
+        for player in self.players:
+            print(f"{player.name}: {player.role.name}")
 
         for player in self.players:
             if isinstance(player, AIPlayer):
-                player_is_werewolf_team = player.role.name == "Werewolf"
-                if player_is_werewolf_team:
-                    did_win = not village_wins
-                else:
-                    did_win = village_wins
-
+                did_win = player in winners
                 performance_tracker.update_performance(player, did_win=did_win)
 
         performance_tracker.save_performance_data()
