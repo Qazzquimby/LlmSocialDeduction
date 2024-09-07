@@ -9,5 +9,5 @@ Each player should have a unique readable text color. Choices should be given th
 
 
 Tasks:
-- [ ] Right now the game logic is specific to ONUW but it should be more general for future games added.
+- [ ] Right now the game logic is specific to ONUW but it should be more general for future games added. A major refactor could be in order.
 - [ ] The front is just a bare svelte chat app. Front and back need to be modified to talk to each other.

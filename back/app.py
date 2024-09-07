@@ -1,12 +1,9 @@
 import json
-
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from starlette.middleware.cors import CORSMiddleware
-from starlette.websockets import WebSocket
-
+from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 
 app = FastAPI()
-
 
 # Enable CORS
 app.add_middleware(
@@ -17,26 +14,62 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# Store active connections
-active_connections = []
+# Store active connections and games
+active_connections = {}
+games = {}
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket("/ws/{game_id}")
+async def websocket_endpoint(websocket: WebSocket, game_id: str):
     await websocket.accept()
-    active_connections.append(websocket)
+    if game_id not in active_connections:
+        active_connections[game_id] = []
+    active_connections[game_id].append(websocket)
+    
     try:
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            # Broadcast the message to all connected clients
-            await broadcast(message)
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        active_connections.remove(websocket)
+            
+            if message['type'] == 'create_game':
+                games[game_id] = OneNightWerewolf(num_players=message['num_players'], has_human=True)
+                await broadcast(game_id, {'type': 'game_created', 'game_id': game_id})
+            
+            elif message['type'] == 'start_game':
+                game = games[game_id]
+                game.setup_game()
+                await broadcast(game_id, {'type': 'game_started', 'players': [p.name for p in game.players]})
+                
+                # Start night phase
+                game.play_night_phase()
+                await broadcast(game_id, {'type': 'night_phase_completed'})
+                
+                # Start day phase
+                game.play_day_phase()
+                await broadcast(game_id, {'type': 'day_phase_completed'})
+                
+                # Start voting phase
+                executed_players = game.voting_phase()
+                await broadcast(game_id, {'type': 'voting_completed', 'executed': [p.name for p in executed_players]})
+                
+                # Check win condition
+                game.check_win_condition(executed_players)
+                await broadcast(game_id, {'type': 'game_ended'})
+            
+            elif message['type'] == 'player_action':
+                # Handle player actions (night actions, speaking, voting)
+                game = games[game_id]
+                player = next(p for p in game.players if p.name == message['player'])
+                result = player.handle_action(message['action'], game.game_state)
+                await broadcast(game_id, {'type': 'action_result', 'player': player.name, 'result': result})
+            
+            else:
+                await broadcast(game_id, message)
+    
+    except WebSocketDisconnect:
+        active_connections[game_id].remove(websocket)
 
-async def broadcast(message: dict):
-    for connection in active_connections:
+async def broadcast(game_id: str, message: dict):
+    for connection in active_connections[game_id]:
         await connection.send_text(json.dumps(message))
 
 if __name__ == "__main__":
