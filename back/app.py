@@ -25,6 +25,9 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         active_connections[game_id] = []
     active_connections[game_id].append(websocket)
     
+    # Send connection confirmation
+    await websocket.send_json({"type": "connection_status", "message": "WebSocket connected"})
+    
     try:
         while True:
             data = await websocket.receive_text()
