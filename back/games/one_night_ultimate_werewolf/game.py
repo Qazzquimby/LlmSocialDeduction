@@ -1,25 +1,22 @@
 import random
 from typing import List
 
-from ai_models import get_random_model
+from ...ai_models import get_random_model
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, HumanPlayer, AIPlayer
 from .roles import assign_roles, get_roles_in_game
-from game_state import GameState
+from base_game import Game
 
-class OneNightWerewolf:
+class OneNightWerewolf(Game):
     def __init__(self, num_players: int, has_human: bool = False):
-        self.num_players: int = num_players
-        self.has_human = has_human
-        self.players: List[Player] = []
-        self.game_state: GameState = GameState()
+        super().__init__(num_players, has_human)
 
     def setup_game(self) -> None:
         # Create players
         if self.has_human:
-            num_ai = self.num_players-1
-            self.players.append(HumanPlayer(game=game, name=f"Human"))
+            num_ai = self.num_players - 1
+            self.players.append(HumanPlayer(game=self, name="Human"))
         else:
             num_ai = self.num_players
 
@@ -31,7 +28,7 @@ class OneNightWerewolf:
 
             model = get_random_model()
 
-            player = AIPlayer(game=game, name=name, model=model, personality=personality)
+            player = AIPlayer(game=self, name=name, model=model, personality=personality)
 
             self.players.append(player)
 

@@ -77,6 +77,11 @@ async def broadcast(game_id: str, message: dict):
 async def endpoint_test():
     return {"status": "ok"}
 
+# Add a new route for testing
+@app.get("/test")
+async def endpoint_test():
+    return {"status": "ok"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

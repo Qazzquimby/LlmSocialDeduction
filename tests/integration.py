@@ -1,7 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 
-async def test_websocket_connection():
+async def websocket_connection_test():
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         page = await browser.new_page()
@@ -34,4 +34,4 @@ async def test_websocket_connection():
         
         await browser.close()
 
-asyncio.run(test_websocket_connection())
+asyncio.run(websocket_connection_test())
