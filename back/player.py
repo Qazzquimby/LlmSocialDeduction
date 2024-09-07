@@ -1,8 +1,8 @@
 import random
 from typing import List, Optional
-from .core import Prompt
+from core import Prompt
 from games.one_night_ultimate_werewolf.roles import Role
-from .game_state import GameState
+from game_state import GameState
 
 class Player:
     def __init__(self, game, name: str):

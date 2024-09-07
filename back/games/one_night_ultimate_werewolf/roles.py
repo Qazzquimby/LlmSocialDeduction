@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...game_state import GameState
-    from ...player import Player
+    from game_state import GameState
+    from player import Player
 
 
 @dataclass
@@ -22,7 +22,7 @@ class Role:
     def get_rules(self) -> str:
         raise NotImplementedError
 
-    def get_strategy(self, game_state: GameState) -> str:
+    def get_strategy(self, game_state: 'GameState') -> str:
         strategy = "\n".join(self.get_general_strategy_lines())
 
         interaction_lines = []

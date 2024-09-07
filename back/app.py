@@ -74,7 +74,7 @@ async def broadcast(game_id: str, message: dict):
 
 # Add a new route for testing
 @app.get("/test")
-async def test_endpoint():
+async def endpoint_test():
     return {"status": "ok"}
 
 if __name__ == "__main__":
