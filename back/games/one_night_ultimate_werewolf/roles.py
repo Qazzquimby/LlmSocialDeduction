@@ -1,10 +1,10 @@
 import random
 from dataclasses import dataclass
-from typing import List, Optional, TYPE_CHECKING, Type
+from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from game_state import GameState
-    from player import Player
+    from ...game_state import GameState
+    from ...player import Player
 
 
 @dataclass

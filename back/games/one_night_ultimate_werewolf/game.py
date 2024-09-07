@@ -1,13 +1,12 @@
 import random
 from typing import List
 
-from ai_models import get_random_model
-from model_performance import performance_tracker
-from ai_personalities import PERSONALITIES
-from player import Player, HumanPlayer, AIPlayer
-from roles import assign_roles, get_roles_in_game
-from game_state import GameState
-from conversation import handle_conversations
+from ...ai_models import get_random_model
+from ...model_performance import performance_tracker
+from ...ai_personalities import PERSONALITIES
+from ...player import Player, HumanPlayer, AIPlayer
+from .roles import assign_roles, get_roles_in_game
+from ...game_state import GameState
 
 class OneNightWerewolf:
     def __init__(self, num_players: int, has_human: bool = False):

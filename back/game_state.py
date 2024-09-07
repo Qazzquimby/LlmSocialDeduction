@@ -1,8 +1,8 @@
 from typing import List, Tuple, TYPE_CHECKING
-from roles import Role
+from games.one_night_ultimate_werewolf.roles import Role
 
 if TYPE_CHECKING:
-    from player import Player
+    from .player import Player
 
 class GameState:
     def __init__(self):

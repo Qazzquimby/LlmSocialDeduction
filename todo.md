@@ -11,3 +11,7 @@ Each player should have a unique readable text color. Choices should be given th
 Tasks:
 - [ ] Right now the game logic is specific to ONUW but it should be more general for future games added. A major refactor could be in order.
 - [ ] The front is just a bare svelte chat app. Front and back need to be modified to talk to each other.
+- [ ] Implement the frontend to match the backend WebSocket communication.
+- [ ] Add more comprehensive integration tests.
+- [ ] Implement authentication using Pocketbase.
+- [ ] Add game logging functionality.
