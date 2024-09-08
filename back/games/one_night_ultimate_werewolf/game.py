@@ -105,9 +105,6 @@ class OneNightWerewolf(Game):
         else:
             print("\nIt's a tie! No one has been executed.")
 
-        for player in self.players:
-            print(f"{player.name} was a {player.role.name}.")
-
         return executed_players
 
     def check_win_condition(self, executed_players: List[Player]) -> None:
