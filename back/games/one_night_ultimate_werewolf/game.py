@@ -1,11 +1,12 @@
 import random
 from typing import List
 
-from ...ai_models import get_random_model
+from ai_models import get_random_model
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, HumanPlayer, AIPlayer
-from .roles import assign_roles, get_roles_in_game
+from onuw_roles import get_roles_in_game, assign_roles
+
 from base_game import Game
 
 class OneNightWerewolf(Game):
@@ -61,14 +62,22 @@ class OneNightWerewolf(Game):
                     if action:
                         self.game_state.record_night_action(player, action)
 
-    def handle_conversations(self, players: List[Player]) -> None:
-        for player in players:
-            message = player.speak()
-            print(message)
+    def handle_conversations(self):
+        num_rounds = 2  # You can adjust this
+        for round_i in range(num_rounds):
+            conversation_round_message = f"\nConversation Round {round_i + 1} / {num_rounds}"
+            print(conversation_round_message)
+            for player in self.players:
+                player.observations.append(conversation_round_message)
+
+            for player in self.players:
+                message = player.speak()
+                for listening_player in self.players:
+                    listening_player.observations.append(message)
 
     def play_day_phase(self) -> None:
         print("\n--- Day Phase ---")
-        self.handle_conversations(self.players)
+        self.handle_conversations()
 
     def voting_phase(self) -> List[Player]:
         print("\n--- Voting Phase ---")

@@ -1,5 +1,5 @@
 from typing import List, Tuple, TYPE_CHECKING
-from games.one_night_ultimate_werewolf.roles import Role
+from games.one_night_ultimate_werewolf.onuw_roles import Role
 
 if TYPE_CHECKING:
     from .player import Player
