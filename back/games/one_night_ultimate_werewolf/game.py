@@ -33,6 +33,8 @@ class OneNightWerewolf(Game):
 
             self.players.append(player)
 
+        random.shuffle(self.players)
+
         for player in self.players:
             player.observations.append(f"The players in this game are: {', '.join([p.name for p in self.players])}.")
 
@@ -63,9 +65,11 @@ class OneNightWerewolf(Game):
                         self.game_state.record_night_action(player, action)
 
     def handle_conversations(self):
-        num_rounds = 2  # You can adjust this
+        num_rounds = 3  # You can adjust this
         for round_i in range(num_rounds):
             conversation_round_message = f"\nConversation Round {round_i + 1} / {num_rounds}"
+            if round_i + 1 == num_rounds:
+                conversation_round_message += " (FINAL CHANCE TO TALK)"
             print(conversation_round_message)
             for player in self.players:
                 player.observations.append(conversation_round_message)
@@ -137,7 +141,8 @@ class OneNightWerewolf(Game):
         self.think()
         executed_players = self.voting_phase()
         self.check_win_condition(executed_players)
+        print("\n--- Game Over ---")
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=4, has_human=True)
+    game = OneNightWerewolf(num_players=5, has_human=True)
     game.play_game()

@@ -31,8 +31,8 @@ class Prompt:
                 timeout=60,
                 num_retries=2,
             )
-        except:
-            print("COMPLETION FAILED. Try to manually fix before continuing.")
+        except Exception as e:
+            print("COMPLETION FAILED. Try to manually fix before continuing.", e)
             try:
                 response = completion(
                     model=model,
@@ -40,7 +40,7 @@ class Prompt:
                     timeout=60,
                     num_retries=2,
                 )
-            except:
+            except Exception as e:
                 return "(No response)"
         response_text = response["choices"][0]["message"]["content"]
         self.add_message(response_text, role="assistant")

@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING, Type
 from core import Prompt
 from roles import Role
 
@@ -75,7 +75,7 @@ class Player:
 class HumanPlayer(Player):
     def speak(self) -> str:
         message = self.prompt_with(
-            "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear. Keep it brief and don't teach basic strategy."
+            "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear."
         )
         return f"Human: {message}"
 
@@ -89,16 +89,17 @@ class HumanPlayer(Player):
     def think(self):
         pass
 
-def get_rules(roles):
+def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
     rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"
     rules += "First there is a night phase where certain roles will act.\n"
 
     for role in set(roles):
-        rules += role().get_rules() + "\n"
+        rules += role.get_rules() + "\n"
 
     rules += "\nDuring the day, each player will vote for someone to execute. The players with the most votes (all on a tie) will be executed. Werewolves win if no werewolf is executed. Other roles win if a werewolf to be executed unless their rules say otherwise.\n"
     rules += "Then the game is over and winners are determined. There is only one round."
+    return rules
 
 class AIPlayer(Player):
     def __init__(self, game, name: str, model, personality: str = None):
@@ -127,7 +128,7 @@ class AIPlayer(Player):
 
         rules = get_rules(self.game.game_state.role_pool)
 
-        litellm_prompt.add_message(rules)
+        litellm_prompt.add_message(rules, role="system")
 
         for message in self.observations:
             litellm_prompt = litellm_prompt.add_message(message, role="system")

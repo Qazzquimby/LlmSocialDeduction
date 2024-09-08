@@ -143,7 +143,7 @@ class Robber(Role):
             return "Invalid choice. You lose your night action."
 
     def get_rules(self) -> str:
-        return "The Robber may steal a player's card and see what it is during the night phase."
+        return "During the night, the Robber may swap their card with another player's card and see what their new card is. The other player won't know their card changed."
 
     def did_win(self, player: 'Player', executed_players: List['Player'],
                 werewolves_exist: bool) -> bool:
