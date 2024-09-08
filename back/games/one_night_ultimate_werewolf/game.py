@@ -100,10 +100,8 @@ class OneNightWerewolf(Game):
         max_votes = max(vote_count.values())
         executed_players = [p for p, v in vote_count.items() if v == max_votes]
 
-        if len(executed_players) == 1:
-            print(f"\n{executed_players[0].name} has been executed!")
-        else:
-            print("\nIt's a tie! No one has been executed.")
+        for executed_player in executed_players:
+            print(f"\n{executed_player.name} has been executed!")
 
         return executed_players
 

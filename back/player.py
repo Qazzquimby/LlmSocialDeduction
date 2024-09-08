@@ -81,6 +81,7 @@ class HumanPlayer(Player):
 
     def prompt_with(self, prompt: str) -> str:
         print("\n\n\n\n\n\n-------------\nCurrent observations:\n")
+        print(get_rules(self.game.game_state.role_pool))
         for message in self.observations:
             print(message + "\n\n")
         return input(prompt)
@@ -88,6 +89,16 @@ class HumanPlayer(Player):
     def think(self):
         pass
 
+def get_rules(roles):
+    rules = "Rules:\n"
+    rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"
+    rules += "First there is a night phase where certain roles will act.\n"
+
+    for role in set(roles):
+        rules += role().get_rules() + "\n"
+
+    rules += "\nDuring the day, each player will vote for someone to execute. The players with the most votes (all on a tie) will be executed. Werewolves win if no werewolf is executed. Other roles win if a werewolf to be executed unless their rules say otherwise.\n"
+    rules += "Then the game is over and winners are determined. There is only one round."
 
 class AIPlayer(Player):
     def __init__(self, game, name: str, model, personality: str = None):
@@ -114,14 +125,7 @@ class AIPlayer(Player):
             role="system"
         )
 
-        rules = "Rules:\n"
-        rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"
-        rules += "First there is a night phase where certain roles will act.\n"
-
-        for role in set(player.role.__class__ for player in self.game.players):
-            rules += role().get_rules() + "\n"
-
-        rules += "\nDuring the day, each player will vote for someone to execute. The players with the most votes will be executed.\n"
+        rules = get_rules(self.game.game_state.role_pool)
 
         litellm_prompt.add_message(rules)
 
