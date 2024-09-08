@@ -1,7 +1,7 @@
 import random
 from typing import List, Optional, TYPE_CHECKING
 from core import Prompt
-from onuw_roles import Role
+from roles import Role
 
 if TYPE_CHECKING:
     from game_state import GameState
@@ -102,8 +102,8 @@ class AIPlayer(Player):
     def speak(self) -> str:
         prompt = ""
         if self.personality:
-            prompt += f"\nYour personality is: {self.personality}"
-        prompt += "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear. Keep it brief and focused."
+            prompt += f"\nYour personality is: {self.personality}. Don't over do it, focus on the game."
+        prompt += "What would you like to say to the other players? Your *entire response* will be broadcast so don't add any preamble or they'll hear it. Keep it focused on reasoning about the game. Try to accomplish something with your message, rather than passing. Other players will expect you to tell your role and observations and you will look suspicious if you don't."
 
         message = self.prompt_with(prompt)
         return f"{self.name}({self.model}): {message}"
@@ -121,7 +121,7 @@ class AIPlayer(Player):
         for role in set(player.role.__class__ for player in self.game.players):
             rules += role().get_rules() + "\n"
 
-        rules += "\nDuring the day, each player will vote for someone to execute. The player with the most votes will be executed.\n"
+        rules += "\nDuring the day, each player will vote for someone to execute. The players with the most votes will be executed.\n"
 
         litellm_prompt.add_message(rules)
 
@@ -139,7 +139,10 @@ class AIPlayer(Player):
 
     def think(self):
         self.prompt_with(
-            """Think privately. Your response is for you and you alone, so use whatever format is best for you. 
-                    Think step by step. What strategy seems wise? What can you logically induce from your observations? How can you gain more information, built trust, or mislead your opponents?
+            """Think privately. Your response is for you and you alone, so use whatever format will help future-you most. 
+                    Think step by step.
+                    What can you logically induce from your observations? How can you gain more information, built trust, or mislead your opponents?
+                    What statements might be convenient lies?
+                    What strategy will you use? 
                     """
         )

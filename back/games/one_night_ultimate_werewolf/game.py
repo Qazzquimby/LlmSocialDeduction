@@ -129,14 +129,14 @@ class OneNightWerewolf(Game):
 
     def play_game(self) -> None:
         self.setup_game()
-        self.think()
 
+        self.think()
         self.play_night_phase()
-        self.think()
 
+        self.think()
         self.play_day_phase()
-        self.think()
 
+        self.think()
         executed_players = self.voting_phase()
         self.check_win_condition(executed_players)
 

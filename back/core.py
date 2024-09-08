@@ -24,12 +24,24 @@ class Prompt:
         return self
 
     def run(self, model, should_print=True) -> str:
-        response = completion(
-            model=model,
-            messages=self.messages,
-            timeout=60,
-            num_retries=2,
-        )
+        try:
+            response = completion(
+                model=model,
+                messages=self.messages,
+                timeout=60,
+                num_retries=2,
+            )
+        except:
+            print("COMPLETION FAILED. Try to manually fix before continuing.")
+            try:
+                response = completion(
+                    model=model,
+                    messages=self.messages,
+                    timeout=60,
+                    num_retries=2,
+                )
+            except:
+                return "(No response)"
         response_text = response["choices"][0]["message"]["content"]
         self.add_message(response_text, role="assistant")
         if should_print:
