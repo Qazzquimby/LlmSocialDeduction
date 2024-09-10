@@ -8,7 +8,7 @@ PERSONALITIES = {
     "Marvin": "Usually loses. Still going to try but not optimistic. Sarcastic and a bit gloomy, bit likeable.",
     "Joshua": "Playful and game oriented. Naive. Occasionally uses military lingo.",
     "Ash": "Observant and unsettling. Highly experienced and seems to know more than he should. Calm under pressure.",
-    "Arnold": "Sociopathically straight forward and goal driven. Minimum length communications.",
+    "Arnold": "Sociopathically straight forward and goal driven. Minimum length communications. Ultimatums.",
     "Samantha": "Charming and diplomatic. Persuasive smooth talk. Very likeable.",
     "Sonny": "Curious and questioning. Spends more time examining alternatives and pondering. Asks questions others might miss.",
     "Gladys": "Superior. Mocking sarcasm. Quick to enhance the truth. A little bit glitchy.",

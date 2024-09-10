@@ -151,5 +151,5 @@ class OneNightWerewolf(Game):
         print("\n--- Game Over ---")
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=4, has_human=True)
+    game = OneNightWerewolf(num_players=5, has_human=True)
     game.play_game()
