@@ -101,7 +101,7 @@ class Seer(Role):
             return "Invalid choice. You lose your night action."
 
     def get_rules(self) -> str:
-        return "The Seer will see the identities of another player or two of the unused identities during the night phase."
+        return "During the night, the seer can either see the role of another player, or see *two* of the unused center cards."
 
     def did_win(self, player: 'Player', executed_players: List['Player'],
                 werewolves_exist: bool) -> bool:
@@ -170,7 +170,7 @@ class Troublemaker(Role):
         players = game_state.players
         options = "\n".join(
             [f"{i}: {p.name}" for i, p in enumerate(players, 1) if p != player])
-        prompt = f"{player.name}, choose two players to swap roles:\n{options}\nEnter the choices numbers of both players separated by a space, like `2 3`:"
+        prompt = f"{player.name}, choose two players to swap roles:\n{options}\nEnter the choices numbers of both players separated by a space, like `2 3`. For example you might say your thoughts and then {{1 3, Tom and Ernie, Since this is the start of the game I'm choosing mostly at random.}}"
         choices = player.get_choice(prompt)
 
         if len(choices) == 2 and 1 <= choices[0] <= len(players) and 1 <= choices[

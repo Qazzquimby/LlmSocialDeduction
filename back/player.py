@@ -44,9 +44,15 @@ class Player:
         else:
             return random.choice(players)
 
-    def get_choice(self, prompt: str) -> List[int]:
-        response = self.prompt_with(
-            prompt + "\n Format: Step by step thinking, then {choice_number, choice name, why you chose that option instead of the others}.")
+    def get_choice(self, prompt: str, choose_multiple=False) -> List[int]:
+        if choose_multiple:
+            response = self.prompt_with(
+                prompt + "\n Your final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}."
+            )
+        else:
+            response = self.prompt_with(
+                prompt + "\n Your final answer must take the form {choice_number, choice name}, eg {1, Bob}."
+            )
 
         formatted_answer = response.split("{")[-1]
         words = (formatted_answer
@@ -92,7 +98,8 @@ class HumanPlayer(Player):
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
     rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"
-    rules += "First there is a night phase where certain roles will act.\n"
+    rules += ("First there is a night phase where certain roles will act.\n"
+              "Players may have their roles changed during the night, but they'll perform their original role's action in the night anyway. Usually a player has no way of knowing if their role changed.\n")
 
     for role in set(roles):
         rules += role.get_rules() + "\n"
@@ -111,16 +118,26 @@ class AIPlayer(Player):
         self.games_played = 0
         self.games_won = 0
 
+        self.think_prompt = """First think step by step in point form. 
+                What do you believe, how strongly, and why?
+                What can you logically induce from your observations? What looks like misdirection?
+                                   
+                Should your strategy change given new information?
+                
+                Then answer the following question in the correct {} format:\n"""
+
     def speak(self) -> str:
         prompt = ""
         if self.personality:
             prompt += f"\nYour personality is: {self.personality}. Don't over do it, focus on the game."
-        prompt += "What would you like to say to the other players? Your *entire response* will be broadcast so don't add any preamble or they'll hear it. Keep it focused on reasoning about the game. Try to accomplish something with your message, rather than passing. Other players will expect you to tell your role and observations and you will look suspicious if you don't."
+        prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Try to accomplish something with your message, rather than passing. Other players will expect you to tell your role and observations and you will look suspicious if you don't."
 
-        message = self.prompt_with(prompt)
-        return f"{self.name}({self.model}): {message}"
+        response = self.prompt_with(prompt, should_think=True)
+        message_to_broadcast = response.split("{")[-1]
+        message_to_broadcast = message_to_broadcast.replace("}", "")
+        return f"{self.name}({self.model}): {message_to_broadcast}"
 
-    def prompt_with(self, prompt: str) -> str:
+    def prompt_with(self, prompt: str, should_think=False) -> str:
         litellm_prompt = Prompt().add_message(
             f"You're playing a social deduction game. Your name is {self.name}",
             role="system"
@@ -133,6 +150,9 @@ class AIPlayer(Player):
         for message in self.observations:
             litellm_prompt = litellm_prompt.add_message(message, role="system")
 
+        if should_think:
+            prompt = self.think_prompt + prompt
+
         litellm_prompt = litellm_prompt.add_message(prompt, role="system")
         response = litellm_prompt.run(model=self.model, should_print=False)
         self.total_cost += litellm_prompt.total_cost
@@ -143,11 +163,12 @@ class AIPlayer(Player):
         return response
 
     def think(self):
+        raise DeprecationWarning("Removing this")
         self.prompt_with(
-            """Think privately. Your response is for you and you alone, so use whatever format will help future-you most. 
-                    Think step by step.
-                    What can you logically induce from your observations? How can you gain more information, built trust, or mislead your opponents?
-                    What statements might be convenient lies?
-                    What strategy will you use? 
+            """Think step by step in point form. 
+                What do you believe, how strongly, and why?
+                What can you logically induce from your observations? What looks like misdirection?
+                                   
+                Should your strategy change given new information?
                     """
         )

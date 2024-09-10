@@ -132,17 +132,23 @@ class OneNightWerewolf(Game):
     def play_game(self) -> None:
         self.setup_game()
 
-        self.think()
+        # self.think()
         self.play_night_phase()
 
-        self.think()
+        # self.think()
         self.play_day_phase()
 
-        self.think()
+        # self.think()
         executed_players = self.voting_phase()
         self.check_win_condition(executed_players)
+
+        total_cost = 0
+        for player in self.players:
+            if isinstance(player, AIPlayer):
+                total_cost += player.total_cost
+        print(f"Total cost: {total_cost:.2f} USD")
         print("\n--- Game Over ---")
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=5, has_human=True)
+    game = OneNightWerewolf(num_players=4, has_human=True)
     game.play_game()

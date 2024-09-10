@@ -21,6 +21,3 @@ class Game:
 
     def check_win_condition(self, executed_players: List[Player]) -> None:
         raise NotImplementedError("Subclasses must implement check_win_condition method")
-
-    def handle_player_action(self, player: Player, action: str) -> str:
-        return player.handle_action(action, self.game_state)
