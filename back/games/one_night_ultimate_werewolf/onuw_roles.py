@@ -294,7 +294,7 @@ class Thing(ONUWRole):
         if len(choices) == 1 and 1 <= choices[0] <= len(adjacent_players):
             target = adjacent_players[choices[0] - 1]
             target.observations.append(
-                "An adjacent player is the Thing and tapped you.")
+                "An player before or after you in turn order is the Thing and tapped you.")
             return f"You tap {target.name}."
         else:
             return "Invalid choice. You lose your night action."
@@ -333,6 +333,12 @@ class Doppelganger(ONUWRole):
         else:
             return "Invalid choice. You lose your night action."
 
+
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "You must take on the strategy of whatever role you take.",
+            "Note that if your role is swapped away, it will still be the role you copied, not 'Doppelganger'."
+        ]
 
 def get_roles_in_game(num_players: int) -> List[Role]:
     global_role_pool = [Werewolf(), Werewolf()]
