@@ -99,10 +99,14 @@ def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
     rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"
     rules += ("First there is a night phase where certain roles will act.\n"
-              "Players may have their roles changed during the night, but they'll perform their original role's action in the night anyway. Usually a player has no way of knowing if their role changed.\n")
+              "Players may have their roles changed during the night, but they'll perform their original role's action in the night anyway. Usually a player has no way of knowing if their role changed.\n"
+              "Roles activate in the order they're described below.")
 
-    for role in set(roles):
-        rules += role.get_rules() + "\n"
+    seen_roles = set()
+    for role in roles:
+        if role not in seen_roles:
+            seen_roles.add(role)
+            rules += role.get_rules() + "\n"
 
     rules += "\nDuring the day, each player will vote for someone to execute. The players with the most votes (all on a tie) will be executed. Werewolves win if no werewolf is executed. Other roles win if a werewolf to be executed unless their rules say otherwise.\n"
     rules += "Then the game is over and winners are determined. There is only one round."
