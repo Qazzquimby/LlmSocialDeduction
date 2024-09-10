@@ -56,8 +56,9 @@ class OneNightWerewolf(Game):
 
     def play_night_phase(self) -> None:
         print("\n--- Night Phase ---")
-        role_order = ["Werewolf", "Seer", "Robber", "Troublemaker"]
-        for role in role_order:
+        night_roles = [role.name for role in self.game_state.role_pool if role.wake_order < 100]
+        night_roles.sort(key=lambda role: role.wake_order)
+        for role in night_roles:
             for player in self.players:
                 if player.original_role.name == role:
                     action = player.night_action(self.game_state)

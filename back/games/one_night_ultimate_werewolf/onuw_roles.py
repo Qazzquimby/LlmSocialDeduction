@@ -14,8 +14,6 @@ class ONUWRole(Role):
         self.wake_order = wake_order
 
 
-
-
 class Werewolf(ONUWRole):
     def __init__(self):
         super().__init__("Werewolf", wake_order=2)
@@ -239,6 +237,7 @@ class Tanner(ONUWRole):
 
         ]
 
+
 class Insomniac(ONUWRole):
     def __init__(self):
         super().__init__("Insomniac", wake_order=9)
@@ -286,26 +285,64 @@ class Thing(ONUWRole):
         my_index = game_state.players.index(player)
         previous_index = my_index - 1
         next_index = (my_index + 1) % len(game_state.players)
-        adjacent_players = [game_state.players[previous_index], game_state.players[next_index]]
+        adjacent_players = [game_state.players[previous_index],
+                            game_state.players[next_index]]
 
-        choices = player.get_choice("choose an adjacent player to tap: " + "\n".join([f"{i}: {p.name}" for i, p in enumerate(adjacent_players, 1)]))
+        choices = player.get_choice("choose an adjacent player to tap: " + "\n".join(
+            [f"{i}: {p.name}" for i, p in enumerate(adjacent_players, 1)]))
 
         if len(choices) == 1 and 1 <= choices[0] <= len(adjacent_players):
             target = adjacent_players[choices[0] - 1]
-            target.observations.append("An adjacent player is the Thing and tapped you.")
+            target.observations.append(
+                "An adjacent player is the Thing and tapped you.")
             return f"You tap {target.name}."
         else:
             return "Invalid choice. You lose your night action."
 
 
+class Doppelganger(ONUWRole):
+    def __init__(self):
+        super().__init__("Doppelganger", wake_order=1)
+
+    def get_rules(self) -> str:
+        return "During the night phase, the Doppelganger looks at another player's card and becomes that card's role, immediately taking it's night action. Essentially there may be 1 more of any role."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'],
+                werewolves_exist: bool) -> bool:
+        print(
+            "WARN: Doppelganger is checking for win condition, which is uncommon unless doppleganger was gained from the center.")
+        return any(isinstance(p.role, Werewolf) for p in
+                   executed_players) or not werewolves_exist
+
+    def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+        players = game_state.players
+        options = "\n".join(
+            [f"{i}: Copy {p.name}" for i, p in enumerate(players, 1) if p != player])
+        prompt = f"{player.name}, choose a player to copy their role:\n{options}\nEnter your choice:"
+        choice = player.get_choice(prompt)
+
+        if len(choice) >= 1 and 1 <= choice[0] <= len(players):
+            target = players[choice[0] - 1]
+            action_text = f"You copied the role of {target.name}. Your new role is: {player.role.name}"
+
+            player.role = target.role
+            second_night_action_text = player.role.night_action(player, game_state)
+            if second_night_action_text:
+                action_text += f"\nThen, as the {player.role.name}: " + second_night_action_text
+            return action_text
+        else:
+            return "Invalid choice. You lose your night action."
 
 
 def get_roles_in_game(num_players: int) -> List[Role]:
-    global_role_pool = [
-        Werewolf(), Werewolf(),
-        Seer(), Robber(), Troublemaker(), Tanner(),
-        Insomniac(), Villager(), Villager()
+    global_role_pool = [Werewolf(), Werewolf()]
+
+    village_roles = [
+        Seer(), Robber(), Troublemaker(), Tanner(), Insomniac(), Thing(), Doppelganger()
     ]
+    random.shuffle(village_roles)
+    global_role_pool += village_roles
+
     role_pool_for_this_many_players = global_role_pool[:num_players + 3]
     return role_pool_for_this_many_players
 
