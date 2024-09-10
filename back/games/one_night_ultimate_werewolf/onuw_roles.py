@@ -1,5 +1,5 @@
 import random
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 
 from roles import Role, RoleInteraction
 
@@ -231,12 +231,36 @@ class Tanner(Role):
 
         ]
 
+class Insomniac(Role):
+    def __init__(self):
+        super().__init__("Insomniac")
+
+    def get_rules(self) -> str:
+        return "At the end of the night phase, the Insomniac looks at their card to see if it has changed."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'],
+                werewolves_exist: bool) -> bool:
+        return any(isinstance(p.role, Werewolf) for p in
+                   executed_players) or not werewolves_exist
+
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "If you discover you're now a werewolf, when someone says they swapped you, you can claim you used to be the werewolf to put doubt on the person you swapped with."
+        ]
+
+    def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+        new_role = player.role.name
+        if player.role.name == player.original_role.name:
+            return "You are still the Insomniac."
+        else:
+            return f"You see that your role has changed to {player.role.name}."
+
 
 def get_roles_in_game(num_players: int) -> List[Role]:
     global_role_pool = [
         Werewolf(), Werewolf(),
         Seer(), Robber(), Troublemaker(), Tanner(),
-        Villager(), Villager(), Villager()
+        Insomniac(), Villager(), Villager()
     ]
     role_pool_for_this_many_players = global_role_pool[:num_players + 3]
     return role_pool_for_this_many_players
