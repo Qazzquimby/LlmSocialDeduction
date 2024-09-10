@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class ONUWRole(Role):
-    def __init__(self, name, wake_order=999):
+    def __init__(self, name, wake_order=999.0):
         super().__init__(name)
         self.wake_order = wake_order
 
@@ -262,6 +262,42 @@ class Insomniac(ONUWRole):
             return "You are still the Insomniac."
         else:
             return f"You see that your role has changed to {new_role}."
+
+
+class Thing(ONUWRole):
+    def __init__(self):
+        super().__init__("Thing", wake_order=4.2)
+
+    def get_rules(self) -> str:
+        return "During the night phase, the Thing taps a player next to them in turn order."
+
+    def did_win(self, player: 'Player', executed_players: List['Player'],
+                werewolves_exist: bool) -> bool:
+        return any(isinstance(p.role, Werewolf) for p in
+                   executed_players) or not werewolves_exist
+
+    def get_general_strategy_lines(self) -> List[str]:
+        return [
+            "If a player confirms they were tapped it can back up you claim as a team village player.",
+            "Werewolves may not want to confirm they were tapped to avoid backing you up."
+        ]
+
+    def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+        my_index = game_state.players.index(player)
+        previous_index = my_index - 1
+        next_index = (my_index + 1) % len(game_state.players)
+        adjacent_players = [game_state.players[previous_index], game_state.players[next_index]]
+
+        choices = player.get_choice("choose an adjacent player to tap: " + "\n".join([f"{i}: {p.name}" for i, p in enumerate(adjacent_players, 1)]))
+
+        if len(choices) == 1 and 1 <= choices[0] <= len(adjacent_players):
+            target = adjacent_players[choices[0] - 1]
+            target.observations.append("An adjacent player is the Thing and tapped you.")
+            return f"You tap {target.name}."
+        else:
+            return "Invalid choice. You lose your night action."
+
+
 
 
 def get_roles_in_game(num_players: int) -> List[Role]:
