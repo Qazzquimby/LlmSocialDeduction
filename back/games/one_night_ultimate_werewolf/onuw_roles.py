@@ -8,9 +8,17 @@ if TYPE_CHECKING:
     from player import Player
 
 
-class Werewolf(Role):
+class ONUWRole(Role):
+    def __init__(self, name, wake_order=None):
+        super().__init__(name)
+        self.wake_order = wake_order
+
+
+
+
+class Werewolf(ONUWRole):
     def __init__(self):
-        super().__init__("Werewolf")
+        super().__init__("Werewolf", wake_order=2)
 
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         other_werewolves = [p for p in game_state.players if
@@ -58,7 +66,7 @@ class Werewolf(Role):
         ]
 
 
-class Villager(Role):
+class Villager(ONUWRole):
     def __init__(self):
         super().__init__("Villager")
 
@@ -79,9 +87,9 @@ class Villager(Role):
         ]
 
 
-class Seer(Role):
+class Seer(ONUWRole):
     def __init__(self):
-        super().__init__("Seer")
+        super().__init__("Seer", wake_order=5)
 
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
@@ -124,9 +132,9 @@ class Seer(Role):
         ]
 
 
-class Robber(Role):
+class Robber(ONUWRole):
     def __init__(self):
-        super().__init__("Robber")
+        super().__init__("Robber", wake_order=6)
 
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
@@ -162,9 +170,9 @@ class Robber(Role):
         ]
 
 
-class Troublemaker(Role):
+class Troublemaker(ONUWRole):
     def __init__(self):
-        super().__init__("Troublemaker")
+        super().__init__("Troublemaker", wake_order=7)
 
     def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
@@ -201,7 +209,7 @@ class Troublemaker(Role):
         ]
 
 
-class Tanner(Role):
+class Tanner(ONUWRole):
     def __init__(self):
         super().__init__("Tanner")
 
@@ -231,9 +239,9 @@ class Tanner(Role):
 
         ]
 
-class Insomniac(Role):
+class Insomniac(ONUWRole):
     def __init__(self):
-        super().__init__("Insomniac")
+        super().__init__("Insomniac", wake_order=9)
 
     def get_rules(self) -> str:
         return "At the end of the night phase, the Insomniac looks at their card to see if it has changed."
@@ -250,10 +258,10 @@ class Insomniac(Role):
 
     def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
         new_role = player.role.name
-        if player.role.name == player.original_role.name:
+        if new_role == player.original_role.name:
             return "You are still the Insomniac."
         else:
-            return f"You see that your role has changed to {player.role.name}."
+            return f"You see that your role has changed to {new_role}."
 
 
 def get_roles_in_game(num_players: int) -> List[Role]:
