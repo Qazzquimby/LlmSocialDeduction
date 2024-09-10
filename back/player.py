@@ -2,6 +2,7 @@ import random
 from typing import List, Optional, TYPE_CHECKING, Type
 from core import Prompt
 from roles import Role
+import re
 
 if TYPE_CHECKING:
     from game_state import GameState
@@ -47,11 +48,13 @@ class Player:
     def get_choice(self, prompt: str, choose_multiple=False) -> List[int]:
         if choose_multiple:
             response = self.prompt_with(
-                prompt + "\n Your final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}."
+                prompt + "\n Your final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}.",
+                should_think=True
             )
         else:
             response = self.prompt_with(
-                prompt + "\n Your final answer must take the form {choice_number, choice name}, eg {1, Bob}."
+                prompt + "\n Your final answer must take the form {choice_number, choice name}, eg {1, Bob}.",
+                should_think=True
             )
 
         formatted_answer = response.split("{")[-1]
@@ -68,7 +71,7 @@ class Player:
         numbers = [int(word) for word in words if word.isnumeric()]
         return numbers
 
-    def prompt_with(self, prompt: str) -> str:
+    def prompt_with(self, prompt: str, should_think=False) -> str:
         raise NotImplementedError
 
     def think(self):
@@ -85,7 +88,7 @@ class HumanPlayer(Player):
         )
         return f"Human: {message}"
 
-    def prompt_with(self, prompt: str) -> str:
+    def prompt_with(self, prompt: str, should_think=False) -> str:
         print("\n\n\n\n\n\n-------------\nCurrent observations:\n")
         print(get_rules(self.game.game_state.role_pool))
         for message in self.observations:
@@ -136,12 +139,12 @@ class AIPlayer(Player):
             prompt += f"\nYour personality is: {self.personality}. Don't over do it, focus on the game."
         prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Try to accomplish something with your message, rather than passing. Other players will expect you to tell your role and observations and you will look suspicious if you don't."
 
-        response = self.prompt_with(prompt, should_think=True)
+        response = self.prompt_with(prompt, should_think=True, should_rules_check=True)
         message_to_broadcast = response.split("{")[-1]
         message_to_broadcast = message_to_broadcast.replace("}", "")
         return f"{self.name}({self.model}): {message_to_broadcast}"
 
-    def prompt_with(self, prompt: str, should_think=False) -> str:
+    def prompt_with(self, prompt: str, should_think=False, should_rules_check=False) -> str:
         litellm_prompt = Prompt().add_message(
             f"You're playing a social deduction game. Your name is {self.name}",
             role="system"
@@ -164,15 +167,38 @@ class AIPlayer(Player):
         self.observations.append(
             f"I was asked: {prompt}\n\n I responded: {response}\n\n\n")
 
+        if should_rules_check:
+            self.check_rules(response)
+
         return response
 
     def think(self):
         raise DeprecationWarning("Removing this")
-        self.prompt_with(
-            """Think step by step in point form. 
-                What do you believe, how strongly, and why?
-                What can you logically induce from your observations? What looks like misdirection?
-                                   
-                Should your strategy change given new information?
-                    """
-        )
+
+
+    def check_rules(self, message: str) -> None:
+        rules = get_rules(self.game.game_state.role_pool)
+        prompt = f"""
+        You are a Rules Genie for a social deduction game. 
+        Your job is to check if a player's statement contains rules errors or faulty reasoning. 
+    
+        {rules}
+    
+        Player's statement:
+        {message}
+    
+        For each logical or rules statement the player made while thinking, determine if it is solid reasoning step by step while quoting the relevant original rules. It's normal for player's to lie to each other while speaking, so only report errors if you think they're unintentional. You can backtrack if you find you're making a mistake.
+    
+        When you're done reasoning, provide an answer in {{}} brackets.
+        If the statement contains any errors, explain the errors in the brackets. If not, say '{{No errors found}}.'
+        """
+
+        litellm_prompt = Prompt().add_message(prompt, role="system")
+        response = litellm_prompt.run(model=self.model, should_print=False)
+
+        if "No errors found" not in response:
+            part_to_share = response.split("{")[-1]
+            part_to_share = part_to_share.replace("}", "")
+            self.observations.append(
+                f"Rules Genie: Hi, I might have noticed a rules error in your last message. If this was intentional (or *I* am mistaken), just ignore me. It's also fine to pretend to make a rules error when talking.\n"
+                f"{part_to_share}")

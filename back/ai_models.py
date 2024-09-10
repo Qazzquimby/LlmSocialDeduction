@@ -3,7 +3,7 @@ import random
 models = [
     "gpt-4o-2024-08-06",
     # "gpt-4o-mini-2024-07-18",
-    "claude-3-5-sonnet-20240620",
+    # "claude-3-5-sonnet-20240620", # Public Relations
     # "openrouter/nousresearch/hermes-3-llama-3.1-405b",
     # "openrouter/google/gemini-pro-1.5", # seems crashy?
     "openrouter/meta-llama/llama-3.1-405b-instruct",
