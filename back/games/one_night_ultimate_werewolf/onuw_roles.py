@@ -46,13 +46,16 @@ class Werewolf(ONUWRole):
 
     def get_general_strategy_lines(self) -> List[str]:
         return [
-            "Generally, it is best to claim Village roles that gain no or little information, like Troublemaker"
+            "Generally, it is best to claim Village roles that gain no or little information, like Troublemaker",
+            "You should be spreading misinformation whenever possible if you don't think you'll be contradicted. Whenever you have real information, like knowing a center card, don't share it unless someone else will back it up and make you look trustworthy.",
+            "Werewolves need to care more about causing confusion than figuring out other's roles.",
+            "If you're a solo werewolf you learn one of the center roles, which is probably safe to claim to be. "
         ]
 
     def get_interaction_strategy_lines(self) -> List[RoleInteraction]:
         return [
             RoleInteraction(Tanner(),
-                            "You can also try to claim Werewolf, as no Werewolf would reveal themselves. This will likely make you called a Tanner, causing nobody to vote for you."),
+                            "You can also try to claim Werewolf, as no Werewolf would reveal themselves. This will likely make you called a Tanner, causing nobody to vote for you. Note that you lose if a Tanner is executed."),
             RoleInteraction(Robber(),
                             "You could claim Robber and say you robbed someone right as they claim"),
             # RoleInteraction(Mason(), "If there is another Werewolf, both of you could claim to be Masons that saw each other, this will almost certainly be contradicted by someone so you need to be convincing"),
@@ -323,7 +326,7 @@ class Doppelganger(ONUWRole):
 
         if len(choice) >= 1 and 1 <= choice[0] <= len(players):
             target = players[choice[0] - 1]
-            action_text = f"You copied the role of {target.name}. Your new role is: {player.role.name}"
+            action_text = f"You copied the role of {target.name}. Your new role is: {target.role.name}"
 
             player.role = target.role
             second_night_action_text = player.role.night_action(player, game_state)
@@ -344,7 +347,7 @@ def get_roles_in_game(num_players: int) -> List[Role]:
     global_role_pool = [Werewolf(), Werewolf()]
 
     village_roles = [
-        Seer(),
+        # Seer(),
         Robber(), Troublemaker(), Tanner(),
         # Villager(), Villager(), Villager(),
         Insomniac(), Thing(), Doppelganger()

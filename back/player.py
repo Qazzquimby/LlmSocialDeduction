@@ -127,8 +127,8 @@ class AIPlayer(Player):
 
         self.think_prompt = """First think step by step in point form. 
                 What do you believe, how strongly, and why?
-                What can you logically induce from your observations? What looks like misdirection?
-                                   
+                What can you logically induce from your observations? Quote relevant the relevant rules and double check your reasoning. 
+                                                   
                 Should your strategy change given new information?
                 
                 Then answer the following question in the correct {} format:\n"""
