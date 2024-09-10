@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class ONUWRole(Role):
-    def __init__(self, name, wake_order=None):
+    def __init__(self, name, wake_order=999):
         super().__init__(name)
         self.wake_order = wake_order
 

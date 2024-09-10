@@ -106,7 +106,7 @@ def get_rules(roles: List[Role]) -> str:
               "Roles activate in the order they're described below.")
 
     seen_roles = set()
-    for role in roles:
+    for role in sorted(roles, key=lambda r: r.wake_order):
         if role not in seen_roles:
             seen_roles.add(role)
             rules += role.get_rules() + "\n"
