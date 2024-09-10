@@ -79,7 +79,7 @@ class Villager(ONUWRole):
     def get_general_strategy_lines(self) -> List[str]:
         return [
             "The main strategy for a villager player involves manipulating one of the werewolves into claiming Villager, thus narrowing the number of suspects for team village.",
-            "Villager is a really attractive claim for a Werewolf or Dream Wolf as you're not given any secret information. Because of this you should never claim Villager initially, as it is a very suspicious claim.",
+            "Villager is a really attractive claim for a Werewolf as you're not given any secret information. Consider not claiming to be Villager initially as it is a suspicious claim.",
             "Make false claims. This leaves fewer roles open for werewolves to claim safely. Werewolves don't want to narrow it down to two suspects.",
             "Once you've located a werewolf, if you're also suspected of being a werewolf, call for a split vote between you and the werewolf, this is advantageous for team village, and the werewolf can't fight it without looking suspicious. Make sure to ask for all suspected werewolves to vote for you, so the werewolves can't ruin the vote.",
         ]
@@ -338,7 +338,10 @@ def get_roles_in_game(num_players: int) -> List[Role]:
     global_role_pool = [Werewolf(), Werewolf()]
 
     village_roles = [
-        Seer(), Robber(), Troublemaker(), Tanner(), Insomniac(), Thing(), Doppelganger()
+        Seer(),
+        Robber(), Troublemaker(), Tanner(),
+        # Villager(), Villager(), Villager(),
+        Insomniac(), Thing(), Doppelganger()
     ]
     random.shuffle(village_roles)
     global_role_pool += village_roles

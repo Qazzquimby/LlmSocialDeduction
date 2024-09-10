@@ -137,7 +137,7 @@ class AIPlayer(Player):
         prompt = ""
         if self.personality:
             prompt += f"\nYour personality is: {self.personality}. Don't over do it, focus on the game."
-        prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Try to accomplish something with your message, rather than passing. Other players will expect you to tell your role and observations and you will look suspicious if you don't."
+        prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Try to *accomplish* something with your message, don't pass or be scared of risk. Other players will expect you to tell your role and observations and you will look suspicious if you don't. If you say you're a role, they'll expect you to have the information that role would have. If you say you have information, they will expect your role to back it up. Don't say you have a hunch or feeling, make claims."
 
         response = self.prompt_with(prompt, should_think=True, should_rules_check=True)
         message_to_broadcast = response.split("{")[-1]
