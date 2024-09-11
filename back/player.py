@@ -24,7 +24,7 @@ class Player:
 
     async def night_action(self, game_state: 'GameState') -> Optional[str]:
         if self.role:
-            action_result = await self.role.night_action(self, game_state)
+            action_result = await self.original_role.night_action(self, game_state)
             if action_result:
                 await self.observe(action_result)
             return action_result
@@ -91,12 +91,11 @@ class HumanPlayer(Player):
         return f"Human: {message}"
 
     async def prompt_with(self, prompt: str, should_think=False) -> str:
-        print("\n\n\n\n\n\n-------------\nCurrent observations:\n")
-        print(get_rules(self.game.game_state.role_pool))
-        for message in self.observations:
-            print(message + "\n\n")
         return await ainput(prompt)
 
+    async def observe(self, message):
+        self.observations.append(message)
+        print(message)
 
 class WebHumanPlayer(Player):
     def __init__(self, game, name: str, websocket):
@@ -126,6 +125,10 @@ class WebHumanPlayer(Player):
         })
         response = await self.websocket.receive_json()
         return players[response['vote']]
+
+    async def observe(self, message):
+        self.observations.append(message)
+        self.websocket.send_json({"type": "observation", "message": message})
 
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
