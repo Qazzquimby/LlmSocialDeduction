@@ -67,6 +67,9 @@
       case 'action_result':
         messages = [...messages, { username: data.player, message: data.result }];
         break;
+      default:
+        messages = [...messages, { username: 'System', message: 'unhandled type ' + data.message }];
+        break;
     }
   }
 

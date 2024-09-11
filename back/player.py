@@ -84,51 +84,53 @@ class Player:
 
 
 class HumanPlayer(Player):
+    def __init__(self, game, name):
+        super().__init__(game, name)
+
+    async def set_role(self, role: Role) -> None:
+        await self.observe(
+            get_rules(self.game.game_state.role_pool)
+            # todo add types to observations
+        )
+
+        await super().set_role(role)
+
     async def speak(self) -> str:
         message = await self.prompt_with(
             "What would you like to say to the other players?"
         )
         return f"Human: {message}"
 
+    async def observe(self, message):
+        self.observations.append(message)
+        await self.print(message)
+
+    async def print(self, message):
+        raise NotImplementedError
+
+    async def prompt_with(self, prompt: str, should_think=False) -> str:
+        raise NotImplementedError
+
+class LocalHumanPlayer(HumanPlayer):
     async def prompt_with(self, prompt: str, should_think=False) -> str:
         return await ainput(prompt)
 
-    async def observe(self, message):
-        self.observations.append(message)
+    async def print(self, message):
         print(message)
 
-class WebHumanPlayer(Player):
+class WebHumanPlayer(HumanPlayer):
     def __init__(self, game, name: str, websocket):
         super().__init__(game, name)
         self.websocket = websocket
 
-    async def speak(self) -> str:
-        await self.websocket.send_json({"type": "prompt", "message": "What would you like to say to the other players?"})
-        response = await self.websocket.receive_json()
-        return f"Human: {response['message']}"
-
     async def prompt_with(self, prompt: str, should_think=False) -> str:
-        await self.websocket.send_json({
-            "type": "prompt",
-            "message": prompt,
-            "observations": self.observations,
-            "rules": get_rules(self.game.game_state.role_pool)
-        })
+        await self.websocket.send_json({"type": "prompt", "message": prompt})
         response = await self.websocket.receive_json()
         return response['message']
 
-    async def vote(self, players: List['Player']) -> 'Player':
-        other_players = [other_player for other_player in players if other_player != self]
-        await self.websocket.send_json({
-            "type": "vote",
-            "players": [{"name": player.name, "index": i} for i, player in enumerate(other_players)]
-        })
-        response = await self.websocket.receive_json()
-        return players[response['vote']]
+    async def print(self, message):
+        await self.websocket.send_json({"type": "untyped", "message": message})
 
-    async def observe(self, message):
-        self.observations.append(message)
-        await self.websocket.send_json({"type": "observation", "message": message})
 
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
