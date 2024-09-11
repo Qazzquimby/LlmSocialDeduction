@@ -75,7 +75,7 @@
 
   function createAndStartGame() {
     if (isConnected) {
-      ws.send(JSON.stringify({ type: 'create_and_start_game', num_players: numPlayers }));
+      ws.send(JSON.stringify({ type: 'new_game', num_players: numPlayers }));
     } else {
       console.error('WebSocket is not connected');
     }
@@ -128,39 +128,38 @@
     <input bind:value={username} placeholder="Enter your username" on:change={handleUsernameInput} />
   </div>
 
-  {#if isConnected}
-    <div class="game-controls">
-      <input type="number" bind:value={numPlayers} min="3" max="10" />
-      <Button on:click={createAndStartGame}>New Game</Button>
-    </div>
-
-    <div class="game-state">
-      {#if gameState}
-        <p>Current game state: {gameState}</p>
-      {/if}
-    </div>
-
-    <div class="chat-container">
-      {#each messages as message}
-        <div class="message" style="color: {getMessageColor(message.username)}">
-          <strong>{message.username}:</strong> {message.message}
-        </div>
-      {/each}
-    </div>
-
-    <div class="message-input">
-      <input bind:value={newMessage} placeholder="Type a message" on:keypress={(e) => e.key === 'Enter' && sendMessage()} />
-      <Button on:click={sendMessage}>Send</Button>
-    </div>
-
-    <div class="choices">
-      {#each choices as choice}
-        <Button on:click={() => makeChoice(choice)}>{choice}</Button>
-      {/each}
-    </div>
-  {:else}
-    <p>Connecting to server...</p>
+  {#if !isConnected}
+    <p>Disconnected...</p>
   {/if}
+  <div class="game-controls">
+    <input type="number" bind:value={numPlayers} min="3" max="10" />
+    <Button on:click={createAndStartGame}>New Game</Button>
+  </div>
+
+  <div class="game-state">
+    {#if gameState}
+      <p>Current game state: {gameState}</p>
+    {/if}
+  </div>
+
+  <div class="chat-container">
+    {#each messages as message}
+      <div class="message" style="color: {getMessageColor(message.username)}">
+        <strong>{message.username}:</strong> {message.message}
+      </div>
+    {/each}
+  </div>
+
+  <div class="message-input">
+    <input bind:value={newMessage} placeholder="Type a message" on:keypress={(e) => e.key === 'Enter' && sendMessage()} />
+    <Button on:click={sendMessage}>Send</Button>
+  </div>
+
+  <div class="choices">
+    {#each choices as choice}
+      <Button on:click={() => makeChoice(choice)}>{choice}</Button>
+    {/each}
+  </div>
 </main>
 
 <style>
