@@ -359,11 +359,11 @@ def get_roles_in_game(num_players: int) -> List[Role]:
     return role_pool_for_this_many_players
 
 
-def assign_roles(players: List["Player"], roles_in_game: List[Role]) -> List[Role]:
+async def assign_roles(players: List["Player"], roles_in_game: List[Role]) -> List[Role]:
     roles = roles_in_game[:]
     random.shuffle(roles)
 
     for player, role in zip(players, roles[:len(players)]):
-        player.set_role(role)
+        await player.set_role(role)
 
     return roles[len(players):]  # Return unused roles

@@ -3,6 +3,8 @@ from typing import List, Optional, TYPE_CHECKING
 from core import Prompt
 from roles import Role
 
+from aioconsole import ainput
+
 if TYPE_CHECKING:
     from game_state import GameState
 
@@ -83,7 +85,7 @@ class Player:
 
 class HumanPlayer(Player):
     async def speak(self) -> str:
-        message = self.prompt_with(
+        message = await self.prompt_with(
             "What would you like to say to the other players?"
         )
         return f"Human: {message}"
@@ -93,7 +95,7 @@ class HumanPlayer(Player):
         print(get_rules(self.game.game_state.role_pool))
         for message in self.observations:
             print(message + "\n\n")
-        return input(prompt)
+        return await ainput(prompt)
 
 
 class WebHumanPlayer(Player):

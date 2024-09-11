@@ -45,7 +45,7 @@ class OneNightWerewolf(Game):
 
         # Assign roles
         roles_in_game = get_roles_in_game(len(self.players))
-        center_cards = assign_roles(self.players, roles_in_game=roles_in_game)
+        center_cards = await assign_roles(self.players, roles_in_game=roles_in_game)
         self.game_state.role_pool = roles_in_game
         for player in self.players:
             await player.observe(f"The full role pool in this game are: {', '.join([role.name for role in roles_in_game])}. Remember that 3 of them are in the center, not owned by other players.")
