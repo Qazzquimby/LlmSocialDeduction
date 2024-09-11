@@ -54,10 +54,6 @@ class OneNightWerewolf(Game):
         for player in self.players:
             player.observations.append(f"Your role's strategy: {player.role.get_strategy(self.game_state)}\n")
 
-    def think(self):
-        for player in self.players:
-            player.think()
-
     async def play_night_phase(self) -> None:
         print("\n--- Night Phase ---")
         if self.websocket:
@@ -170,7 +166,7 @@ class OneNightWerewolf(Game):
 
         # self.think()
         executed_players = await self.voting_phase()
-        await self.check_win_condition(executed_players)
+        self.check_win_condition(executed_players)
 
         total_cost = 0
         for player in self.players:

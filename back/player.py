@@ -19,40 +19,40 @@ class Player:
     def set_role(self, role: Role) -> None:
         self.role = role
         self.original_role = role
-        self.observations.append(f"Your initial role is {role.name}")
+        self.observe(f"Your initial role is {role.name}")
 
-    def night_action(self, game_state: 'GameState') -> Optional[str]:
+    async def night_action(self, game_state: 'GameState') -> Optional[str]:
         if self.role:
-            action_result = self.role.night_action(self, game_state)
+            action_result = await self.role.night_action(self, game_state)
             if action_result:
-                self.observations.append(action_result)
+                await self.observe(action_result)
             return action_result
         return None
 
-    def speak(self) -> str:
+    async def speak(self) -> str:
         raise NotImplementedError
 
-    def vote(self, players: List['Player']) -> 'Player':
+    async def vote(self, players: List['Player']) -> 'Player':
         other_players = [other_player for other_player in players if
                          other_player != self]
         question = "Which player do you want to vote to execute?"
         for i, player in enumerate(other_players):
             question += f"\n{i}: {player.name}"
 
-        vote = self.get_choice(question)
+        vote = await self.get_choice(question)
         if vote:
             return players[vote[0]]
         else:
             return random.choice(players)
 
-    def get_choice(self, prompt: str, choose_multiple=False) -> List[int]:
+    async def get_choice(self, prompt: str, choose_multiple=False) -> List[int]:
         if choose_multiple:
-            response = self.prompt_with(
+            response = await self.prompt_with(
                 prompt + "\n Your final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}.",
                 should_think=True
             )
         else:
-            response = self.prompt_with(
+            response = await self.prompt_with(
                 prompt + "\n Your final answer must take the form {choice_number, choice name}, eg {1, Bob}.",
                 should_think=True
             )
@@ -71,32 +71,31 @@ class Player:
         numbers = [int(word) for word in words if word.isnumeric()]
         return numbers
 
-    def prompt_with(self, prompt: str, should_think=False) -> str:
+    async def prompt_with(self, prompt: str, should_think=False) -> str:
         raise NotImplementedError
 
-    def think(self):
-        raise NotImplementedError
+    async def observe(self, message):
+        self.observations.append(message)
+
 
     def __str__(self):
         return self.name
 
 
 class HumanPlayer(Player):
-    def speak(self) -> str:
+    async def speak(self) -> str:
         message = self.prompt_with(
-            "What would you like to say to the other players? Your entire response will be broadcast so don't say anything you don't want them to hear."
+            "What would you like to say to the other players?"
         )
         return f"Human: {message}"
 
-    def prompt_with(self, prompt: str, should_think=False) -> str:
+    async def prompt_with(self, prompt: str, should_think=False) -> str:
         print("\n\n\n\n\n\n-------------\nCurrent observations:\n")
         print(get_rules(self.game.game_state.role_pool))
         for message in self.observations:
             print(message + "\n\n")
         return input(prompt)
 
-    def think(self):
-        pass
 
 class WebHumanPlayer(Player):
     def __init__(self, game, name: str, websocket):
@@ -126,9 +125,6 @@ class WebHumanPlayer(Player):
         })
         response = await self.websocket.receive_json()
         return players[response['vote']]
-
-    def think(self):
-        pass
 
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
@@ -165,7 +161,7 @@ class AIPlayer(Player):
                 
                 Then answer the following question in the correct {} format:\n"""
 
-    def speak(self) -> str:
+    async def speak(self) -> str:
         prompt = ""
         if self.personality:
             prompt += f"\nYour personality is: {self.personality} Don't over do it, focus on the game.\n"
@@ -176,7 +172,7 @@ class AIPlayer(Player):
         message_to_broadcast = message_to_broadcast.replace("}", "")
         return f"{self.name}({self.model}): {message_to_broadcast}"
 
-    def prompt_with(self, prompt: str, should_think=False, should_rules_check=False) -> str:
+    async def prompt_with(self, prompt: str, should_think=False, should_rules_check=False) -> str:
         litellm_prompt = Prompt().add_message(
             f"You're playing a social deduction game. Your name is {self.name}",
             role="system"
@@ -203,10 +199,6 @@ class AIPlayer(Player):
             self.check_rules(response)
 
         return response
-
-    def think(self):
-        raise DeprecationWarning("Removing this")
-
 
     def check_rules(self, message: str) -> None:
         rules = get_rules(self.game.game_state.role_pool)

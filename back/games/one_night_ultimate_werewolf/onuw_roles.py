@@ -18,7 +18,7 @@ class Werewolf(ONUWRole):
     def __init__(self):
         super().__init__("Werewolf", wake_order=2)
 
-    def night_action(self, player: "Player", game_state: "GameState") -> str:
+    async def night_action(self, player: "Player", game_state: "GameState") -> str:
         other_werewolves = [p for p in game_state.players if
                             p != player and isinstance(p.role, Werewolf)]
         if other_werewolves:
@@ -30,7 +30,7 @@ class Werewolf(ONUWRole):
             return f"You see there is no other Werewolf. You see a {random_center_card.name} in the center."
 
     def get_rules(self) -> str:
-        return "Werewolves will see the identities of other werewolves during the night phase. If there are no other wereolves, they see a random center card. They win if no Werewolf is executed."
+        return "Werewolves will see the identities of other werewolves during the night phase. If there are no other werewolves, they see a random center card. They win if no Werewolf is executed."
 
     def did_win(self, player: 'Player', executed_players: List['Player'],
                 werewolves_exist: bool) -> bool:
@@ -92,13 +92,13 @@ class Seer(ONUWRole):
     def __init__(self):
         super().__init__("Seer", wake_order=5)
 
-    def night_action(self, player: "Player", game_state: "GameState") -> str:
+    async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
         options = "0: Look at two center cards\n" + "\n".join(
             [f"{i}: Look at {p.name}'s card" for i, p in enumerate(players, 1) if
              p != player])
         prompt = f"{player.name}, choose a number:\n{options}\nEnter your choice:"
-        choice = player.get_choice(prompt)
+        choice = await player.get_choice(prompt)
 
         if len(choice) >= 1 and choice[0] == 0:
             cards = game_state.center_cards[:2]
@@ -137,12 +137,12 @@ class Robber(ONUWRole):
     def __init__(self):
         super().__init__("Robber", wake_order=6)
 
-    def night_action(self, player: "Player", game_state: "GameState") -> str:
+    async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
         options = "\n".join(
             [f"{i}: Rob {p.name}" for i, p in enumerate(players, 1) if p != player])
         prompt = f"{player.name}, choose a player to rob:\n{options}\nEnter your choice:"
-        choice = player.get_choice(prompt)
+        choice = await player.get_choice(prompt)
 
         if len(choice) >= 1 and 1 <= choice[0] <= len(players):
             target = players[choice[0] - 1]
@@ -175,12 +175,12 @@ class Troublemaker(ONUWRole):
     def __init__(self):
         super().__init__("Troublemaker", wake_order=7)
 
-    def night_action(self, player: "Player", game_state: "GameState") -> str:
+    async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
         options = "\n".join(
             [f"{i}: {p.name}" for i, p in enumerate(players, 1) if p != player])
         prompt = f"{player.name}, choose two players to swap roles:\n{options}\nEnter the choices numbers of both players separated by a space, like `2 3`. For example you might say your thoughts and then {{1 3, Tom and Ernie, Since this is the start of the game I'm choosing mostly at random.}}"
-        choices = player.get_choice(prompt)
+        choices = await player.get_choice(prompt)
 
         if len(choices) == 2 and 1 <= choices[0] <= len(players) and 1 <= choices[
             1] <= len(players) and choices[0] != choices[1]:
@@ -258,7 +258,7 @@ class Insomniac(ONUWRole):
             "If you discover you're now a werewolf, when someone says they swapped you, you can claim you used to be the werewolf to put doubt on the person you swapped with."
         ]
 
-    def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+    async def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
         new_role = player.role.name
         if new_role == player.original_role.name:
             return "You are still the Insomniac."
@@ -284,14 +284,14 @@ class Thing(ONUWRole):
             "Werewolves may not want to confirm they were tapped to avoid backing you up."
         ]
 
-    def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+    async def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
         my_index = game_state.players.index(player)
         previous_index = my_index - 1
         next_index = (my_index + 1) % len(game_state.players)
         adjacent_players = [game_state.players[previous_index],
                             game_state.players[next_index]]
 
-        choices = player.get_choice("choose an adjacent player to tap: " + "\n".join(
+        choices = await player.get_choice("choose an adjacent player to tap: " + "\n".join(
             [f"{i}: {p.name}" for i, p in enumerate(adjacent_players, 1)]))
 
         if len(choices) == 1 and 1 <= choices[0] <= len(adjacent_players):
@@ -317,19 +317,19 @@ class Doppelganger(ONUWRole):
         return any(isinstance(p.role, Werewolf) for p in
                    executed_players) or not werewolves_exist
 
-    def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+    async def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
         players = game_state.players
         options = "\n".join(
             [f"{i}: Copy {p.name}" for i, p in enumerate(players, 1) if p != player])
         prompt = f"{player.name}, choose a player to copy their role:\n{options}\nEnter your choice:"
-        choice = player.get_choice(prompt)
+        choice = await player.get_choice(prompt)
 
         if len(choice) >= 1 and 1 <= choice[0] <= len(players):
             target = players[choice[0] - 1]
             action_text = f"You copied the role of {target.name}. Your new role is: {target.role.name}"
 
             player.role = target.role
-            second_night_action_text = player.role.night_action(player, game_state)
+            second_night_action_text = await player.role.night_action(player, game_state)
             if second_night_action_text:
                 action_text += f"\nThen, as the {player.role.name}: " + second_night_action_text
             return action_text

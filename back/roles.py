@@ -15,7 +15,7 @@ class Role:
     def __init__(self, name: str):
         self.name: str = name
 
-    def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+    async def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
         return None
 
     def get_rules(self) -> str:
