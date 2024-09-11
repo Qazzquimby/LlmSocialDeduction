@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import {Button} from "$lib/components/ui/button";
+  import { Button } from "$lib/components/ui/button";
 
   let messages: Array<{ username: string; message: string }> = [];
   let newMessage = '';
@@ -8,30 +8,43 @@
   let ws: WebSocket;
   let gameState: string | null = null;
   let choices: string[] = [];
-  let gameId = '';
   let numPlayers = 4;
+  let isConnected = false;
 
-  onMount(() => {
-    gameId = Math.random().toString(36).substring(7);
-    ws = new WebSocket(`ws://localhost:8000/ws/${gameId}`);
+  function connectWebSocket() {
+    ws = new WebSocket(`ws://localhost:8000/ws/${username}`);
+
+    ws.onopen = () => {
+      isConnected = true;
+      console.log('WebSocket connected');
+    };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       handleServerMessage(data);
     };
 
-    return () => {
-      ws.close();
+    ws.onclose = () => {
+      isConnected = false;
+      console.log('WebSocket disconnected. Attempting to reconnect...');
+      setTimeout(connectWebSocket, 1000);
     };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  }
+
+  onMount(() => {
+    if (username) {
+      connectWebSocket();
+    }
   });
 
   function handleServerMessage(data: any) {
     switch (data.type) {
       case 'message':
         messages = [...messages, data];
-        break;
-      case 'game_created':
-        gameState = 'Game created';
         break;
       case 'game_started':
         gameState = 'Game started';
@@ -57,16 +70,16 @@
     }
   }
 
-  function createGame() {
-    ws.send(JSON.stringify({ type: 'create_game', num_players: numPlayers }));
-  }
-
-  function startGame() {
-    ws.send(JSON.stringify({ type: 'start_game' }));
+  function createAndStartGame() {
+    if (isConnected) {
+      ws.send(JSON.stringify({ type: 'create_and_start_game', num_players: numPlayers }));
+    } else {
+      console.error('WebSocket is not connected');
+    }
   }
 
   function sendMessage() {
-    if (newMessage.trim() && username.trim()) {
+    if (newMessage.trim() && isConnected) {
       const message = {
         type: 'player_action',
         player: username,
@@ -79,12 +92,14 @@
   }
 
   function makeChoice(choice: string) {
-    const message = {
-      type: 'player_action',
-      player: username,
-      action: choice
-    };
-    ws.send(JSON.stringify(message));
+    if (isConnected) {
+      const message = {
+        type: 'player_action',
+        player: username,
+        action: choice
+      };
+      ws.send(JSON.stringify(message));
+    }
   }
 
   function getMessageColor(username: string): string {
@@ -95,45 +110,54 @@
     const hue = hash % 360;
     return `hsl(${hue}, 70%, 40%)`;
   }
+
+  function handleUsernameInput() {
+    if (username && !isConnected) {
+      connectWebSocket();
+    }
+  }
 </script>
 
 <main>
   <h1>One Night Ultimate Werewolf</h1>
 
   <div class="username-input">
-    <input bind:value={username} placeholder="Enter your username" />
+    <input bind:value={username} placeholder="Enter your username" on:change={handleUsernameInput} />
   </div>
 
-  <div class="game-controls">
-    <input type="number" bind:value={numPlayers} min="3" max="10" />
-    <Button on:click={createGame}>Create Game</Button>
-    <Button on:click={startGame}>Start Game</Button>
-  </div>
+  {#if isConnected}
+    <div class="game-controls">
+      <input type="number" bind:value={numPlayers} min="3" max="10" />
+      <Button on:click={createAndStartGame}>New Game</Button>
+    </div>
 
-  <div class="game-state">
-    {#if gameState}
-      <p>Current game state: {gameState}</p>
-    {/if}
-  </div>
+    <div class="game-state">
+      {#if gameState}
+        <p>Current game state: {gameState}</p>
+      {/if}
+    </div>
 
-  <div class="chat-container">
-    {#each messages as message}
-      <div class="message" style="color: {getMessageColor(message.username)}">
-        <strong>{message.username}:</strong> {message.message}
-      </div>
-    {/each}
-  </div>
+    <div class="chat-container">
+      {#each messages as message}
+        <div class="message" style="color: {getMessageColor(message.username)}">
+          <strong>{message.username}:</strong> {message.message}
+        </div>
+      {/each}
+    </div>
 
-  <div class="message-input">
-    <input bind:value={newMessage} placeholder="Type a message" on:keypress={(e) => e.key === 'Enter' && sendMessage()} />
-    <Button on:click={sendMessage}>Send</Button>
-  </div>
+    <div class="message-input">
+      <input bind:value={newMessage} placeholder="Type a message" on:keypress={(e) => e.key === 'Enter' && sendMessage()} />
+      <Button on:click={sendMessage}>Send</Button>
+    </div>
 
-  <div class="choices">
-    {#each choices as choice}
-      <Button on:click={() => makeChoice(choice)}>{choice}</Button>
-    {/each}
-  </div>
+    <div class="choices">
+      {#each choices as choice}
+        <Button on:click={() => makeChoice(choice)}>{choice}</Button>
+      {/each}
+    </div>
+  {:else}
+    <p>Connecting to server...</p>
+  {/if}
 </main>
 
 <style>

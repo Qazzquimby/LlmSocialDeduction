@@ -128,7 +128,7 @@ class WebHumanPlayer(Player):
 
     async def observe(self, message):
         self.observations.append(message)
-        self.websocket.send_json({"type": "observation", "message": message})
+        await self.websocket.send_json({"type": "observation", "message": message})
 
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
