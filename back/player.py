@@ -98,6 +98,38 @@ class HumanPlayer(Player):
     def think(self):
         pass
 
+class WebHumanPlayer(Player):
+    def __init__(self, game, name: str, websocket):
+        super().__init__(game, name)
+        self.websocket = websocket
+
+    async def speak(self) -> str:
+        await self.websocket.send_json({"type": "prompt", "message": "What would you like to say to the other players?"})
+        response = await self.websocket.receive_json()
+        return f"Human: {response['message']}"
+
+    async def prompt_with(self, prompt: str, should_think=False) -> str:
+        await self.websocket.send_json({
+            "type": "prompt",
+            "message": prompt,
+            "observations": self.observations,
+            "rules": get_rules(self.game.game_state.role_pool)
+        })
+        response = await self.websocket.receive_json()
+        return response['message']
+
+    async def vote(self, players: List['Player']) -> 'Player':
+        other_players = [other_player for other_player in players if other_player != self]
+        await self.websocket.send_json({
+            "type": "vote",
+            "players": [{"name": player.name, "index": i} for i, player in enumerate(other_players)]
+        })
+        response = await self.websocket.receive_json()
+        return players[response['vote']]
+
+    def think(self):
+        pass
+
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
     rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"

@@ -2,6 +2,7 @@ import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from starlette.middleware.cors import CORSMiddleware
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
+import asyncio
 
 app = FastAPI()
 
@@ -34,42 +35,29 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
             message = json.loads(data)
             
             if message['type'] == 'create_game':
-                games[game_id] = OneNightWerewolf(num_players=message['num_players'], has_human=True)
-                await broadcast(game_id, {'type': 'game_created', 'game_id': game_id})
+                games[game_id] = OneNightWerewolf(num_players=message['num_players'], has_human=True, websocket=websocket)
+                await websocket.send_json({'type': 'game_created', 'game_id': game_id})
             
             elif message['type'] == 'start_game':
                 game = games[game_id]
-                game.setup_game()
-                await broadcast(game_id, {'type': 'game_started', 'players': [p.name for p in game.players]})
-                
-                # Start night phase
-                game.play_night_phase()
-                await broadcast(game_id, {'type': 'night_phase_completed'})
-                
-                # Start day phase
-                game.play_day_phase()
-                await broadcast(game_id, {'type': 'day_phase_completed'})
-                
-                # Start voting phase
-                executed_players = game.voting_phase()
-                await broadcast(game_id, {'type': 'voting_completed', 'executed': [p.name for p in executed_players]})
-                
-                # Check win condition
-                game.check_win_condition(executed_players)
-                await broadcast(game_id, {'type': 'game_ended'})
+                asyncio.create_task(play_game(game, game_id))
             
             elif message['type'] == 'player_action':
                 # Handle player actions (night actions, speaking, voting)
                 game = games[game_id]
                 player = next(p for p in game.players if p.name == message['player'])
-                result = player.handle_action(message['action'], game.game_state)
-                await broadcast(game_id, {'type': 'action_result', 'player': player.name, 'result': result})
+                result = await player.handle_action(message['action'], game.game_state)
+                await websocket.send_json({'type': 'action_result', 'player': player.name, 'result': result})
             
             else:
-                await broadcast(game_id, message)
+                await websocket.send_json(message)
     
     except WebSocketDisconnect:
         active_connections[game_id].remove(websocket)
+
+async def play_game(game, game_id):
+    await game.play_game()
+    del games[game_id]
 
 async def broadcast(game_id: str, message: dict):
     for connection in active_connections[game_id]:
@@ -87,4 +75,4 @@ async def endpoint_test():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

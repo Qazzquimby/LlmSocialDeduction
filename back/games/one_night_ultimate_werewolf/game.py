@@ -4,20 +4,24 @@ from typing import List
 from ai_models import get_random_model
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
-from player import Player, HumanPlayer, AIPlayer
+from player import Player, HumanPlayer, AIPlayer, WebHumanPlayer
 from onuw_roles import get_roles_in_game, assign_roles
 
 from base_game import Game
 
 class OneNightWerewolf(Game):
-    def __init__(self, num_players: int, has_human: bool = False):
+    def __init__(self, num_players: int, has_human: bool = False, websocket=None):
         super().__init__(num_players, has_human)
+        self.websocket = websocket
 
-    def setup_game(self) -> None:
+    async def setup_game(self) -> None:
         # Create players
         if self.has_human:
             num_ai = self.num_players - 1
-            self.players.append(HumanPlayer(game=self, name="Human"))
+            if self.websocket:
+                self.players.append(WebHumanPlayer(game=self, name="Human", websocket=self.websocket))
+            else:
+                self.players.append(HumanPlayer(game=self, name="Human"))
         else:
             num_ai = self.num_players
 
@@ -54,8 +58,10 @@ class OneNightWerewolf(Game):
         for player in self.players:
             player.think()
 
-    def play_night_phase(self) -> None:
+    async def play_night_phase(self) -> None:
         print("\n--- Night Phase ---")
+        if self.websocket:
+            await self.websocket.send_json({"type": "phase", "phase": "night"})
         night_roles = [role for role in self.game_state.role_pool if role.wake_order < 100]
         night_roles.sort(key=lambda role: role.wake_order)
         seen_roles = []
@@ -65,11 +71,14 @@ class OneNightWerewolf(Game):
                 for player in [
                     player for player in self.players if player.original_role == role
                 ]:
-                    action = player.night_action(self.game_state)
+                    if isinstance(player, WebHumanPlayer):
+                        action = await player.night_action(self.game_state)
+                    else:
+                        action = player.night_action(self.game_state)
                     if action:
                         self.game_state.record_night_action(player, action)
 
-    def handle_conversations(self):
+    async def handle_conversations(self):
         num_rounds = 3  # You can adjust this
         for round_i in range(num_rounds):
             conversation_round_message = f"\nConversation Round {round_i + 1} / {num_rounds}"
@@ -80,25 +89,39 @@ class OneNightWerewolf(Game):
                 player.observations.append(conversation_round_message)
 
             for player in self.players:
-                message = player.speak()
+                if isinstance(player, WebHumanPlayer):
+                    message = await player.speak()
+                else:
+                    message = player.speak()
                 for listening_player in self.players:
                     listening_player.observations.append(message)
+                if self.websocket:
+                    await self.websocket.send_json({"type": "message", "player": player.name, "message": message})
 
-    def play_day_phase(self) -> None:
+    async def play_day_phase(self) -> None:
         print("\n--- Day Phase ---")
-        self.handle_conversations()
+        if self.websocket:
+            await self.websocket.send_json({"type": "phase", "phase": "day"})
+        await self.handle_conversations()
 
-    def voting_phase(self) -> List[Player]:
+    async def voting_phase(self) -> List[Player]:
         print("\n--- Voting Phase ---")
+        if self.websocket:
+            await self.websocket.send_json({"type": "phase", "phase": "voting"})
 
         votes = {}
         for player in self.players:
-            voted_player = player.vote([p for p in self.players if p != player])
+            if isinstance(player, WebHumanPlayer):
+                voted_player = await player.vote([p for p in self.players if p != player])
+            else:
+                voted_player = player.vote([p for p in self.players if p != player])
             votes[player] = voted_player
 
         print("Votes:")
         for player, voted_player in votes.items():
             print(f"{player.name} voted for {voted_player.name}")
+            if self.websocket:
+                await self.websocket.send_json({"type": "vote", "voter": player.name, "voted": voted_player.name})
 
         # Count votes
         vote_count = {}
@@ -111,6 +134,8 @@ class OneNightWerewolf(Game):
 
         for executed_player in executed_players:
             print(f"\n{executed_player.name} has been executed!")
+            if self.websocket:
+                await self.websocket.send_json({"type": "executed", "player": executed_player.name})
 
         return executed_players
 
@@ -134,18 +159,18 @@ class OneNightWerewolf(Game):
 
         performance_tracker.save_performance_data()
 
-    def play_game(self) -> None:
-        self.setup_game()
+    async def play_game(self) -> None:
+        await self.setup_game()
 
         # self.think()
-        self.play_night_phase()
+        await self.play_night_phase()
 
         # self.think()
-        self.play_day_phase()
+        await self.play_day_phase()
 
         # self.think()
-        executed_players = self.voting_phase()
-        self.check_win_condition(executed_players)
+        executed_players = await self.voting_phase()
+        await self.check_win_condition(executed_players)
 
         total_cost = 0
         for player in self.players:
@@ -153,6 +178,8 @@ class OneNightWerewolf(Game):
                 total_cost += player.total_cost
         print(f"Total cost: {total_cost:.2f} USD")
         print("\n--- Game Over ---")
+        if self.websocket:
+            await self.websocket.send_json({"type": "game_over", "total_cost": total_cost})
 
 if __name__ == "__main__":
     game = OneNightWerewolf(num_players=5, has_human=True)
