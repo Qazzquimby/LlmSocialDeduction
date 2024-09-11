@@ -235,7 +235,7 @@ class Tanner(ONUWRole):
             RoleInteraction(Robber(),
                             "Claiming to be a Robber who robbed someone suspicious will direct suspicions towards you."),
             # RoleInteraction(Drunk(), "A Strategy is to claim to be a Drunk if the Village thinks there might not be any Werewolves.")
-            # RoleInteraction(Doppleganger(), "Claiming Doppelganger is a bit finicky, if you claim to have viewed a role that someone isn't, or performing the role incorrectly you might get killed, but this is almost too subtle."),
+            # RoleInteraction(Doppelganger(), "Claiming Doppelganger is a bit finicky, if you claim to have viewed a role that someone isn't, or performing the role incorrectly you might get killed, but this is almost too subtle."),
             # RoleInteraction(ParanormalInvestigator(), "Claiming Paranormal Investigator is a good idea since they are potentially a Werewolf now."),
 
         ]
@@ -296,7 +296,7 @@ class Thing(ONUWRole):
 
         if len(choices) == 1 and 1 <= choices[0] <= len(adjacent_players):
             target = adjacent_players[choices[0] - 1]
-            target.observations.append(
+            await target.observe(
                 "An player before or after you in turn order is the Thing and tapped you.")
             return f"You tap {target.name}."
         else:
@@ -313,7 +313,7 @@ class Doppelganger(ONUWRole):
     def did_win(self, player: 'Player', executed_players: List['Player'],
                 werewolves_exist: bool) -> bool:
         print(
-            "WARN: Doppelganger is checking for win condition, which is uncommon unless doppleganger was gained from the center.")
+            "WARN: Doppelganger is checking for win condition, which is uncommon unless doppelganger was gained from the center.")
         return any(isinstance(p.role, Werewolf) for p in
                    executed_players) or not werewolves_exist
 

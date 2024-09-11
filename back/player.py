@@ -1,8 +1,7 @@
 import random
-from typing import List, Optional, TYPE_CHECKING, Type
+from typing import List, Optional, TYPE_CHECKING
 from core import Prompt
 from roles import Role
-import re
 
 if TYPE_CHECKING:
     from game_state import GameState
@@ -16,10 +15,10 @@ class Player:
         self.original_role: Optional[Role] = None
         self.observations: List[str] = []
 
-    def set_role(self, role: Role) -> None:
+    async def set_role(self, role: Role) -> None:
         self.role = role
         self.original_role = role
-        self.observe(f"Your initial role is {role.name}")
+        await self.observe(f"Your initial role is {role.name}")
 
     async def night_action(self, game_state: 'GameState') -> Optional[str]:
         if self.role:
@@ -167,7 +166,7 @@ class AIPlayer(Player):
             prompt += f"\nYour personality is: {self.personality} Don't over do it, focus on the game.\n"
         prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Be intentional about what you share - don't self incriminate. Try to *accomplish* something with your message, don't pass or be scared of risk. Other players will expect you to tell your role and observations and you will look suspicious if you don't. If you say you're a role, they'll expect you to have the information that role would have. If you say you have information, they will expect your role to back it up. Don't say you have a hunch or feeling, make claims."
 
-        response = self.prompt_with(prompt, should_think=True, should_rules_check=True)
+        response = await self.prompt_with(prompt, should_think=True, should_rules_check=True)
         message_to_broadcast = response.split("{")[-1]
         message_to_broadcast = message_to_broadcast.replace("}", "")
         return f"{self.name}({self.model}): {message_to_broadcast}"
@@ -192,15 +191,15 @@ class AIPlayer(Player):
         response = litellm_prompt.run(model=self.model, should_print=False)
         self.total_cost += litellm_prompt.total_cost
 
-        self.observations.append(
+        await self.observe(
             f"I was asked: {prompt}\n\n I responded: {response}\n\n\n")
 
         if should_rules_check:
-            self.check_rules(response)
+            await self.check_rules(response)
 
         return response
 
-    def check_rules(self, message: str) -> None:
+    async def check_rules(self, message: str) -> None:
         rules = get_rules(self.game.game_state.role_pool)
         prompt = f"""
         You are a Rules Genie for a social deduction game. 
@@ -223,6 +222,7 @@ class AIPlayer(Player):
         if "No errors found" not in response:
             part_to_share = response.split("{")[-1]
             part_to_share = part_to_share.replace("}", "")
-            self.observations.append(
+            await self.observe(
                 f"Rules Genie: Hi, I might have noticed a rules error in your last message. If this was intentional (or *I* am mistaken), just ignore me. It's also fine to pretend to make a rules error when talking.\n"
-                f"{part_to_share}")
+                f"{part_to_share}"
+            )
