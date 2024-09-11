@@ -1,14 +1,13 @@
-<!-- App.svelte -->
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { Button } from '@shadcn/svelte';
+  import {Button} from "$lib/components/ui/button";
 
-  let messages = [];
+  let messages: Array<{ username: string; message: string }> = [];
   let newMessage = '';
   let username = '';
-  let ws;
-  let gameState = null;
-  let choices = [];
+  let ws: WebSocket;
+  let gameState: string | null = null;
+  let choices: string[] = [];
   let gameId = '';
   let numPlayers = 4;
 
@@ -26,7 +25,7 @@
     };
   });
 
-  function handleServerMessage(data) {
+  function handleServerMessage(data: any) {
     switch (data.type) {
       case 'message':
         messages = [...messages, data];
@@ -38,21 +37,19 @@
         gameState = 'Game started';
         messages = [...messages, { username: 'System', message: `Game started with players: ${data.players.join(', ')}` }];
         break;
-      case 'night_phase_completed':
-        gameState = 'Night phase completed';
-        messages = [...messages, { username: 'System', message: 'Night phase completed' }];
+      case 'phase':
+        gameState = `${data.phase} phase`;
+        messages = [...messages, { username: 'System', message: `${data.phase} phase started` }];
         break;
-      case 'day_phase_completed':
-        gameState = 'Day phase completed';
-        messages = [...messages, { username: 'System', message: 'Day phase completed' }];
+      case 'vote':
+        messages = [...messages, { username: 'System', message: `${data.voter} voted for ${data.voted}` }];
         break;
-      case 'voting_completed':
-        gameState = 'Voting completed';
-        messages = [...messages, { username: 'System', message: `Voting completed. Executed players: ${data.executed.join(', ')}` }];
+      case 'executed':
+        messages = [...messages, { username: 'System', message: `${data.player} has been executed!` }];
         break;
-      case 'game_ended':
+      case 'game_over':
         gameState = 'Game ended';
-        messages = [...messages, { username: 'System', message: 'Game ended' }];
+        messages = [...messages, { username: 'System', message: `Game ended. Total cost: $${data.total_cost.toFixed(2)}` }];
         break;
       case 'action_result':
         messages = [...messages, { username: data.player, message: data.result }];
@@ -81,7 +78,7 @@
     }
   }
 
-  function makeChoice(choice) {
+  function makeChoice(choice: string) {
     const message = {
       type: 'player_action',
       player: username,
@@ -90,7 +87,7 @@
     ws.send(JSON.stringify(message));
   }
 
-  function getMessageColor(username) {
+  function getMessageColor(username: string): string {
     let hash = 0;
     for (let i = 0; i < username.length; i++) {
       hash = username.charCodeAt(i) + ((hash << 5) - hash);

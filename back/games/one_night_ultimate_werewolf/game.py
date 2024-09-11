@@ -6,7 +6,7 @@ from ai_models import get_random_model
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, HumanPlayer, AIPlayer, WebHumanPlayer
-from onuw_roles import get_roles_in_game, assign_roles
+from .onuw_roles import get_roles_in_game, assign_roles
 
 from base_game import Game
 
