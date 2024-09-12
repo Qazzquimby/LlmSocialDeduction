@@ -29,13 +29,17 @@ class Player:
     async def set_role(self, role: Role) -> None:
         self.role = role
         self.original_role = role
-        await self.observe(f"Your initial role is {role.name}")
+        await self.observe(
+            f"Your initial role is {role.name}",
+            observation_type="role",
+            params={"role": role},
+        )
 
     async def night_action(self, game_state: "GameState") -> Optional[str]:
         if self.role:
             action_result = await self.original_role.night_action(self, game_state)
             if action_result:
-                await self.observe(action_result)
+                await self.observe(action_result, observation_type="action_result")
             return action_result
         return None
 
@@ -100,11 +104,6 @@ class HumanPlayer(Player):
         super().__init__(game, name)
 
     async def set_role(self, role: Role) -> None:
-        await self.observe(
-            get_rules(self.game.game_state.role_pool)
-            # todo add types to observations
-        )
-
         await super().set_role(role)
 
     async def speak(self) -> str:
@@ -231,7 +230,10 @@ class AIPlayer(Player):
         response = litellm_prompt.run(model=self.model, should_print=False)
         self.total_cost += litellm_prompt.total_cost
 
-        await self.observe(f"I was asked: {prompt}\n\n I responded: {response}\n\n\n")
+        await self.observe(
+            f"I was asked: {prompt}\n\n I responded: {response}\n\n\n",
+            observation_type="my_action",
+        )
 
         if should_rules_check:
             await self.check_rules(response)
@@ -263,9 +265,17 @@ class AIPlayer(Player):
             part_to_share = part_to_share.replace("}", "")
             await self.observe(
                 f"Rules Genie: Hi, I might have noticed a rules error in your last message. If this was intentional (or *I* am mistaken), just ignore me. It's also fine to pretend to make a rules error when talking.\n"
-                f"{part_to_share}"
+                f"{part_to_share}",
+                observation_type="rules_error",
             )
 
 
-async def everyone_observe(players, message):
-    await asyncio.gather(*[player.observe(message) for player in players])
+async def everyone_observe(
+    players, message, observation_type="untyped", params: dict = None
+):
+    await asyncio.gather(
+        *[
+            player.observe(message, observation_type=observation_type, params=params)
+            for player in players
+        ]
+    )
