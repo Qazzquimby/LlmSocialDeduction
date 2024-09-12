@@ -1,5 +1,6 @@
 import asyncio
 import random
+from dataclasses import dataclass
 from typing import List, Optional, TYPE_CHECKING
 from core import Prompt
 from roles import Role
@@ -10,13 +11,20 @@ if TYPE_CHECKING:
     from game_state import GameState
 
 
+@dataclass
+class Observation:
+    message: str
+    observation_type: str = "untyped"
+    params: dict = None
+
+
 class Player:
     def __init__(self, game, name: str):
         self.game = game
         self.name: str = name
         self.role: Optional[Role] = None
         self.original_role: Optional[Role] = None
-        self.observations: List[str] = []
+        self.observations: List[Observation] = []
 
     async def set_role(self, role: Role) -> None:
         self.role = role
@@ -80,8 +88,8 @@ class Player:
     async def prompt_with(self, prompt: str, should_think=False) -> str:
         raise NotImplementedError
 
-    async def observe(self, message):
-        self.observations.append(message)
+    async def observe(self, message, observation_type="untyped", params: dict = None):
+        self.observations.append(Observation(message, observation_type, params))
 
     def __str__(self):
         return self.name
@@ -105,9 +113,9 @@ class HumanPlayer(Player):
         )
         return f"Human: {message}"
 
-    async def observe(self, message):
-        self.observations.append(message)
-        await self.print(message)
+    async def observe(self, message, observation_type="untyped", params: dict = None):
+        await super().observe(message, observation_type, params)
+        await self.print(message, observation_type, params)
 
     async def print(self, message, observation_type="untyped", params: dict = None):
         raise NotImplementedError
