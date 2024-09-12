@@ -43,9 +43,6 @@
 
   function handleServerMessage(data: any) {
     switch (data.type) {
-      case 'message':
-        messages = [...messages, data];
-        break;
       case 'game_started':
         gameState = 'Game started';
         messages = [...messages, { username: 'System', message: `Game started with players: ${data.players.join(', ')}` }];
@@ -54,21 +51,8 @@
         gameState = `${data.phase} phase`;
         messages = [...messages, { username: 'System', message: `${data.phase} phase started` }];
         break;
-      case 'vote':
-        messages = [...messages, { username: 'System', message: `${data.voter} voted for ${data.voted}` }];
-        break;
-      case 'executed':
-        messages = [...messages, { username: 'System', message: `${data.player} has been executed!` }];
-        break;
-      case 'game_over':
-        gameState = 'Game ended';
-        messages = [...messages, { username: 'System', message: `Game ended. Total cost: $${data.total_cost.toFixed(2)}` }];
-        break;
-      case 'action_result':
-        messages = [...messages, { username: data.player, message: data.result }];
-        break;
       default:
-        messages = [...messages, { username: 'System', message: 'unhandled type ' + data.message }];
+        messages = [...messages, { username: 'System', message: data.message }];
         break;
     }
   }

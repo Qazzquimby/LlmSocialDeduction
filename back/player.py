@@ -78,7 +78,6 @@ class Player:
     async def observe(self, message):
         self.observations.append(message)
 
-
     def __str__(self):
         return self.name
 
