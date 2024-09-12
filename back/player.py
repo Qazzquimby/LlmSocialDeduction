@@ -1,3 +1,4 @@
+import asyncio
 import random
 from typing import List, Optional, TYPE_CHECKING
 from core import Prompt
@@ -232,3 +233,6 @@ class AIPlayer(Player):
                 f"Rules Genie: Hi, I might have noticed a rules error in your last message. If this was intentional (or *I* am mistaken), just ignore me. It's also fine to pretend to make a rules error when talking.\n"
                 f"{part_to_share}"
             )
+
+async def everyone_observe(players, message):
+    await asyncio.gather(*[player.observe(message) for player in players])

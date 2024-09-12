@@ -15,9 +15,5 @@ class Game:
     def play_game(self) -> None:
         raise NotImplementedError("Subclasses must implement play_game method")
 
-    def think(self) -> None:
-        for player in self.players:
-            player.think()
-
     def check_win_condition(self, executed_players: List[Player]) -> None:
         raise NotImplementedError("Subclasses must implement check_win_condition method")

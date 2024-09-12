@@ -5,7 +5,7 @@ from typing import List
 from ai_models import get_random_model
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
-from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer
+from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
 from .onuw_roles import get_roles_in_game, assign_roles
 
 from base_game import Game
@@ -37,15 +37,13 @@ class OneNightWerewolf(Game):
 
         random.shuffle(self.players)
 
-        for player in self.players:
-            await player.observe(f"The players in this game are: {', '.join([p.name for p in self.players])}.")
+        await everyone_observe(self.players, f"The players in this game are: {', '.join([p.name for p in self.players])}.")
 
         # Assign roles
         roles_in_game = get_roles_in_game(len(self.players))
         center_cards = await assign_roles(self.players, roles_in_game=roles_in_game)
         self.game_state.role_pool = roles_in_game
-        for player in self.players:
-            await player.observe(f"The full role pool in this game are: {', '.join([role.name for role in roles_in_game])}. Remember that 3 of them are in the center, not owned by other players.")
+        await everyone_observe(self.players, f"The full role pool in this game are: {', '.join([role.name for role in roles_in_game])}. Remember that 3 of them are in the center, not owned by other players.")
         self.game_state.add_center_cards(center_cards)
         self.game_state.set_players(self.players)
 
@@ -53,8 +51,7 @@ class OneNightWerewolf(Game):
             await player.observe(f"Your role's strategy: {player.role.get_strategy(self.game_state)}\n")
 
     async def play_night_phase(self) -> None:
-        for player in self.players:
-            await player.observe("Night phase begins.")
+        await everyone_observe(self.players, "Night phase begins.")
 
         night_roles = sorted([role for role in self.game_state.role_pool if role.wake_order < 100], key=lambda r: r.wake_order)
         night_roles = list(dict.fromkeys(night_roles)) #ordered dedup
@@ -65,8 +62,7 @@ class OneNightWerewolf(Game):
                     self.game_state.record_night_action(player, action)
 
     async def play_day_phase(self) -> None:
-        for player in self.players:
-            await player.observe("Day phase begins")
+        await everyone_observe(self.players, "Day phase begins")
 
         num_rounds = 3
         for round_i in range(num_rounds):
@@ -74,17 +70,14 @@ class OneNightWerewolf(Game):
             if round_i + 1 == num_rounds:
                 conversation_round_message += " (FINAL CHANCE TO TALK)"
 
-            for player in self.players:
-                await player.observe(conversation_round_message)
+            await everyone_observe(self.players, conversation_round_message)
 
             for player in self.players:
                 message = await player.speak()
-                for listening_player in self.players:
-                    await listening_player.observe(message)
+                await everyone_observe(self.players, message)
 
     async def voting_phase(self) -> List[Player]:
-        for player in self.players:
-            await player.observe("Beginning of voting phase")
+        await everyone_observe(self.players, "Beginning of voting phase")
 
         votes = {}
         for player in self.players:
@@ -102,8 +95,7 @@ class OneNightWerewolf(Game):
         executed_players = [p for p, v in vote_count.items() if v == max_votes]
 
         for executed_player in executed_players:
-            for player in self.players:
-                await player.observe(f"\n{executed_player.name} has been executed!")
+            await everyone_observe(self.players, f"\n{executed_player.name} has been executed!")
 
         return executed_players
 
@@ -112,12 +104,12 @@ class OneNightWerewolf(Game):
         winners = [p for p in self.players if p.role.did_win(p, executed_players, werewolves_exist)]
 
         for winner in winners:
-            for player in self.players:
-                await player.observe(f"{winner} wins!")
+            await everyone_observe(self.players, f"{winner} wins!")
 
         for player in self.players:
-            for listener in self.players:
-                await listener.observe(f"{player.name} was {player.role.name}.")
+            await everyone_observe(
+                self.players, f"{player.name} was {player.role.name}."
+            )
 
         for player in self.players:
             if isinstance(player, AIPlayer):
