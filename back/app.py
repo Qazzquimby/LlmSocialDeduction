@@ -30,11 +30,16 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
     if username not in active_connections:
         active_connections[username] = websocket
 
-    # Send connection confirmation
     await websocket.send_json({"type": "engine", "message": "Connection Established"})
 
-    game = OneNightWerewolf(num_players=5, has_human=True, websocket=websocket)
-    await game.play_game()
+    if username in games:
+        game: OneNightWerewolf = games[username]
+        game.websocket = websocket
+    else:
+        game = OneNightWerewolf(num_players=5, has_human=False, websocket=websocket)
+        games[username] = game
+        await game.play_game()
+
 
 if __name__ == "__main__":
     import uvicorn
