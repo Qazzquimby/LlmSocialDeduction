@@ -163,6 +163,7 @@
 
   .message {
     margin-bottom: 5px;
+    white-space: pre-wrap;
   }
 
   .message-input, .game-controls {
