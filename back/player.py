@@ -23,7 +23,7 @@ class Player:
         self.original_role = role
         await self.observe(f"Your initial role is {role.name}")
 
-    async def night_action(self, game_state: 'GameState') -> Optional[str]:
+    async def night_action(self, game_state: "GameState") -> Optional[str]:
         if self.role:
             action_result = await self.original_role.night_action(self, game_state)
             if action_result:
@@ -34,9 +34,10 @@ class Player:
     async def speak(self) -> str:
         raise NotImplementedError
 
-    async def vote(self, players: List['Player']) -> 'Player':
-        other_players = [other_player for other_player in players if
-                         other_player != self]
+    async def vote(self, players: List["Player"]) -> "Player":
+        other_players = [
+            other_player for other_player in players if other_player != self
+        ]
         question = "Which player do you want to vote to execute?"
         for i, player in enumerate(other_players):
             question += f"\n{i}: {player.name}"
@@ -50,25 +51,28 @@ class Player:
     async def get_choice(self, prompt: str, choose_multiple=False) -> List[int]:
         if choose_multiple:
             response = await self.prompt_with(
-                prompt + "\n Your final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}.",
-                should_think=True
+                prompt
+                + "\n Your final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}.",
+                should_think=True,
             )
         else:
             response = await self.prompt_with(
-                prompt + "\n Your final answer must take the form {choice_number, choice name}, eg {1, Bob}.",
-                should_think=True
+                prompt
+                + "\n Your final answer must take the form {choice_number, choice name}, eg {1, Bob}.",
+                should_think=True,
             )
 
         formatted_answer = response.split("{")[-1]
-        words = (formatted_answer
-                 .replace(",", " ")
-                 .replace('"', " ")
-                 .replace("'", " ")
-                 .replace(".", " ")
-                 .replace("*", " ")
-                 .replace(":", " ")
-                 .replace("}", " ")
-                 .split(" "))
+        words = (
+            formatted_answer.replace(",", " ")
+            .replace('"', " ")
+            .replace("'", " ")
+            .replace(".", " ")
+            .replace("*", " ")
+            .replace(":", " ")
+            .replace("}", " ")
+            .split(" ")
+        )
 
         numbers = [int(word) for word in words if word.isnumeric()]
         return numbers
@@ -105,31 +109,39 @@ class HumanPlayer(Player):
         self.observations.append(message)
         await self.print(message)
 
-    async def print(self, message, observation_type="untyped", params: dict=None):
+    async def print(self, message, observation_type="untyped", params: dict = None):
         raise NotImplementedError
 
-    async def prompt_with(self, prompt: str, should_think=False, params: dict=None) -> str:
+    async def prompt_with(
+        self, prompt: str, should_think=False, params: dict = None
+    ) -> str:
         raise NotImplementedError
+
 
 class LocalHumanPlayer(HumanPlayer):
-    async def prompt_with(self, prompt: str, should_think=False, params: dict=None) -> str:
+    async def prompt_with(
+        self, prompt: str, should_think=False, params: dict = None
+    ) -> str:
         return await ainput(prompt)
 
-    async def print(self, message, observation_type="untyped", params: dict=None):
+    async def print(self, message, observation_type="untyped", params: dict = None):
         print(message)
+
 
 class WebHumanPlayer(HumanPlayer):
     def __init__(self, game, name: str, websocket):
         super().__init__(game, name)
         self.websocket = websocket
 
-    async def prompt_with(self, prompt: str, should_think=False, params: dict=None) -> str:
+    async def prompt_with(
+        self, prompt: str, should_think=False, params: dict = None
+    ) -> str:
         await self.websocket.send_json({"type": "prompt", "message": prompt})
         await self.print(prompt, observation_type="prompt", params=params)
         response = await self.websocket.receive_json()
-        return response['message']
+        return response["message"]
 
-    async def print(self, message, observation_type="untyped", params: dict=None):
+    async def print(self, message, observation_type="untyped", params: dict = None):
         json = {"type": observation_type, "message": message}
         if params:
             json = {**json, **params}
@@ -139,9 +151,11 @@ class WebHumanPlayer(HumanPlayer):
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"
     rules += "Each player has a role, but that role may be changed during the night phase. Three more roles are in the center.\n\n"
-    rules += ("First there is a night phase where certain roles will act.\n"
-              "Players may have their roles changed during the night, but they'll perform their original role's action in the night anyway. Usually a player has no way of knowing if their role changed.\n"
-              "Roles activate in the order they're described below.")
+    rules += (
+        "First there is a night phase where certain roles will act.\n"
+        "Players may have their roles changed during the night, but they'll perform their original role's action in the night anyway. Usually a player has no way of knowing if their role changed.\n"
+        "Roles activate in the order they're described below."
+    )
 
     seen_roles = set()
     for role in sorted(roles, key=lambda r: r.wake_order):
@@ -150,8 +164,11 @@ def get_rules(roles: List[Role]) -> str:
             rules += role.get_rules() + "\n"
 
     rules += "\nDuring the day, each player will vote for someone to execute. The players with the most votes (all on a tie) will be executed. Werewolves win if no werewolf is executed. Other roles win if a werewolf to be executed unless their rules say otherwise.\n"
-    rules += "Then the game is over and winners are determined. There is only one round."
+    rules += (
+        "Then the game is over and winners are determined. There is only one round."
+    )
     return rules
+
 
 class AIPlayer(Player):
     def __init__(self, game, name: str, model, personality: str = None):
@@ -177,15 +194,19 @@ class AIPlayer(Player):
             prompt += f"\nYour personality is: {self.personality} Don't over do it, focus on the game.\n"
         prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Be intentional about what you share - don't self incriminate. Try to *accomplish* something with your message, don't pass or be scared of risk. Other players will expect you to tell your role and observations and you will look suspicious if you don't. If you say you're a role, they'll expect you to have the information that role would have. If you say you have information, they will expect your role to back it up. Don't say you have a hunch or feeling, make claims."
 
-        response = await self.prompt_with(prompt, should_think=True, should_rules_check=True)
+        response = await self.prompt_with(
+            prompt, should_think=True, should_rules_check=True
+        )
         message_to_broadcast = response.split("{")[-1]
         message_to_broadcast = message_to_broadcast.replace("}", "")
         return f"{self.name}({self.model}): {message_to_broadcast}"
 
-    async def prompt_with(self, prompt: str, should_think=False, should_rules_check=False) -> str:
+    async def prompt_with(
+        self, prompt: str, should_think=False, should_rules_check=False
+    ) -> str:
         litellm_prompt = Prompt().add_message(
             f"You're playing a social deduction game. Your name is {self.name}",
-            role="system"
+            role="system",
         )
 
         rules = get_rules(self.game.game_state.role_pool)
@@ -202,8 +223,7 @@ class AIPlayer(Player):
         response = litellm_prompt.run(model=self.model, should_print=False)
         self.total_cost += litellm_prompt.total_cost
 
-        await self.observe(
-            f"I was asked: {prompt}\n\n I responded: {response}\n\n\n")
+        await self.observe(f"I was asked: {prompt}\n\n I responded: {response}\n\n\n")
 
         if should_rules_check:
             await self.check_rules(response)
@@ -237,6 +257,7 @@ class AIPlayer(Player):
                 f"Rules Genie: Hi, I might have noticed a rules error in your last message. If this was intentional (or *I* am mistaken), just ignore me. It's also fine to pretend to make a rules error when talking.\n"
                 f"{part_to_share}"
             )
+
 
 async def everyone_observe(players, message):
     await asyncio.gather(*[player.observe(message) for player in players])
