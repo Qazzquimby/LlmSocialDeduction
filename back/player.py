@@ -105,17 +105,17 @@ class HumanPlayer(Player):
         self.observations.append(message)
         await self.print(message)
 
-    async def print(self, message):
+    async def print(self, message, observation_type="untyped", params: dict=None):
         raise NotImplementedError
 
-    async def prompt_with(self, prompt: str, should_think=False) -> str:
+    async def prompt_with(self, prompt: str, should_think=False, params: dict=None) -> str:
         raise NotImplementedError
 
 class LocalHumanPlayer(HumanPlayer):
-    async def prompt_with(self, prompt: str, should_think=False) -> str:
+    async def prompt_with(self, prompt: str, should_think=False, params: dict=None) -> str:
         return await ainput(prompt)
 
-    async def print(self, message):
+    async def print(self, message, observation_type="untyped", params: dict=None):
         print(message)
 
 class WebHumanPlayer(HumanPlayer):
@@ -123,13 +123,17 @@ class WebHumanPlayer(HumanPlayer):
         super().__init__(game, name)
         self.websocket = websocket
 
-    async def prompt_with(self, prompt: str, should_think=False) -> str:
+    async def prompt_with(self, prompt: str, should_think=False, params: dict=None) -> str:
         await self.websocket.send_json({"type": "prompt", "message": prompt})
+        await self.print(prompt, observation_type="prompt", params=params)
         response = await self.websocket.receive_json()
         return response['message']
 
-    async def print(self, message):
-        await self.websocket.send_json({"type": "untyped", "message": message})
+    async def print(self, message, observation_type="untyped", params: dict=None):
+        json = {"type": observation_type, "message": message}
+        if params:
+            json = {**json, **params}
+        await self.websocket.send_json(json)
 
 
 def get_rules(roles: List[Role]) -> str:

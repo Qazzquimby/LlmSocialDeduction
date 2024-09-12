@@ -8,7 +8,7 @@
   let ws: WebSocket;
   let gameState: string | null = null;
   let choices: string[] = [];
-  let numPlayers = 4;
+  let numPlayers = 5;
   let isConnected = false;
 
   function connectWebSocket() {
@@ -41,6 +41,44 @@
     }
   });
 
+
+  type OKLCHColor = [number, number, number]; // [lightness, chroma, hue]
+
+  function generateColors(count: number, baseLightness: number = 73): OKLCHColor[] {
+      const colors: OKLCHColor[] = [];
+      const goldenRatioConjugate = 0.618033988749895;
+      let hue = Math.random();
+
+      for (let i = 0; i < count; i++) {
+          hue += goldenRatioConjugate;
+          hue %= 1;
+
+          // Vary lightness slightly to improve distinguishability
+          const lightness = baseLightness + (Math.random() * 10 - 5);
+
+          // Use a fixed chroma for simplicity, but you can vary this too if needed
+          const chroma = 0.216;
+
+          colors.push([lightness, chroma, hue * 360]);
+      }
+
+      return colors;
+  }
+
+  function getContrastColor(color: OKLCHColor): 'black' | 'white' {
+      const [lightness] = color;
+      // A simple threshold-based approach
+      return lightness > 60 ? 'black' : 'white';
+  }
+
+  function formatOKLCH(color: OKLCHColor): string {
+      const [l, c, h] = color;
+      return `oklch(${l.toFixed(0)}% ${c.toFixed(3)} ${h.toFixed(0)})`;
+  }
+
+  const playerColors = generateColors(numPlayers);
+  const playerContrastColors = playerColors.map((color) => getContrastColor(color));
+
   function handleServerMessage(data: any) {
     switch (data.type) {
       case 'game_started':
@@ -50,6 +88,9 @@
       case 'phase':
         gameState = `${data.phase} phase`;
         messages = [...messages, { username: 'System', message: `${data.phase} phase started` }];
+        break;
+      case 'speech':
+        messages = [...messages, { username: data.player, message: data.message }];
         break;
       default:
         messages = [...messages, { username: 'System', message: data.message }];
