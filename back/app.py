@@ -5,6 +5,8 @@ import asyncio
 from loguru import logger
 from typing import Dict
 
+from player import WebHumanPlayer
+
 app = FastAPI()
 
 # Configure loguru
@@ -74,6 +76,16 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 "gameId": game.id,
             }
         )
+        web_human = [
+            player for player in game.players if isinstance(player, WebHumanPlayer)
+        ][0]
+        print("Catching up", web_human.name)
+        for observation in web_human.observations:
+            await web_human.print(
+                message=observation.message,
+                observation_type=observation.observation_type,
+                params=observation.params,
+            )
 
     try:
         while True:
