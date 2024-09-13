@@ -144,11 +144,12 @@ class WebHumanPlayer(HumanPlayer):
         self, prompt: str, should_think=False, params: dict = None
     ) -> str:
         from app import get_user_input  # Import here to avoid circular import
-        await self.print(prompt, observation_type="prompt", params=params)
+
         return await get_user_input(self.user_id, prompt)
 
     async def print(self, message, observation_type="untyped", params: dict = None):
         from app import connections  # Import here to avoid circular import
+
         json = {"type": observation_type, "message": message}
         if params:
             json = {**json, **params}

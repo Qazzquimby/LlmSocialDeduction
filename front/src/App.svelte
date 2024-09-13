@@ -15,6 +15,7 @@
   let players: string[] = [];
 
   function connectWebSocket() {
+    console.log('Trying connection');
     ws = new WebSocket(`ws://localhost:8000/ws/${username}`);
 
     ws.onopen = () => {
@@ -30,6 +31,7 @@
 
     ws.onclose = () => {
       isConnected = false;
+      console.log('Disconnected, no auto reconnect');
       // console.log('WebSocket disconnected. Attempting to reconnect...');
       // setTimeout(connectWebSocket, 1000);
       // todo set up auto reconnect
@@ -166,10 +168,16 @@
     <input bind:value={username} placeholder="Enter your username" on:change={handleUsernameInput} />
   </div>
 
-  {#if !isConnected}
-    <p>Disconnected...</p>
+  {#if isConnected}
+    <span>Connected </span>
+    {#if gameId}
+      <span>to {gameId}</span>
+    {/if}
   {:else}
-    <p>Game ID: {gameId}</p>
+    <span>Disconnected </span>
+    {#if gameId}
+      <span>from {gameId}</span>
+    {/if}
   {/if}
   <div class="game-controls">
     <input type="number" bind:value={numPlayers} min="3" max="10" />
@@ -184,9 +192,15 @@
 
   <div class="chat-container">
     {#each messages as message}
-      <div class="message" style="background-color: {playerColors.get(message.username)} color: {playerContrastColors.get(message.username)}">
-        <strong>{message.username}:</strong> {message.message}
-      </div>
+      {#if message.username && message.username !== 'System'}
+        <div class="message player-message" style="background-color: {formatOKLCH(playerColors.get(message.username))}; color: {playerContrastColors.get(message.username)}">
+          <strong>{message.username}:</strong> {message.message}
+        </div>
+      {:else}
+        <div class="message system-message">
+          <strong>{message.username}:</strong> {message.message}
+        </div>
+      {/if}
     {/each}
   </div>
 
@@ -220,6 +234,16 @@
   .message {
     margin-bottom: 5px;
     white-space: pre-wrap;
+  }
+
+  .player-message {
+    padding: 5px;
+    border-radius: 5px;
+  }
+
+  .system-message {
+    color: black;
+    font-style: italic;
   }
 
   .message-input, .game-controls {
