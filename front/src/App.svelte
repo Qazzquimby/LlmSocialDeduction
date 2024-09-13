@@ -12,6 +12,8 @@
   let isConnected = false;
   let gameId: string | null = null;
 
+  let players: string[] = [];
+
   function connectWebSocket() {
     ws = new WebSocket(`ws://localhost:8000/ws/${username}`);
 
@@ -28,8 +30,9 @@
 
     ws.onclose = () => {
       isConnected = false;
-      console.log('WebSocket disconnected. Attempting to reconnect...');
-      setTimeout(connectWebSocket, 1000);
+      // console.log('WebSocket disconnected. Attempting to reconnect...');
+      // setTimeout(connectWebSocket, 1000);
+      // todo set up auto reconnect
     };
 
     ws.onerror = (error) => {
@@ -79,18 +82,23 @@
       return `oklch(${l.toFixed(0)}% ${c.toFixed(3)} ${h.toFixed(0)})`;
   }
 
-  const playerColors = generateColors(numPlayers);
-  const playerContrastColors = playerColors.map((color) => getContrastColor(color));
+  $: playerColorList = generateColors(numPlayers)
+  $: playerColors = new Map(players.map((player, i) => [player, playerColorList[i]]));
+  $: playerContrastColors = new Map(
+    players.map((player) => [player, getContrastColor(playerColors.get(player)!)])
+);
   // /color
 
   function handleServerMessage(data: any) {
     switch (data.type) {
       case 'game_connect':
+        isConnected = true;
         gameId = data.gameId;
         break
       case 'game_started':
         gameState = 'Game started';
         messages = [...messages, { username: 'System', message: `Game started with players: ${data.players.join(', ')}` }];
+        players = data.players
         break;
       case 'phase':
         gameState = `${data.phase} phase`;
@@ -138,15 +146,6 @@
     }
   }
 
-  function getMessageColor(username: string): string {
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-      hash = username.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const hue = hash % 360;
-    return `hsl(${hue}, 70%, 40%)`;
-  }
-
   function handleUsernameInput() {
     if (username && !isConnected) {
       connectWebSocket();
@@ -185,7 +184,7 @@
 
   <div class="chat-container">
     {#each messages as message}
-      <div class="message" style="color: {getMessageColor(message.username)}">
+      <div class="message" style="background-color: {playerColors.get(message.username)} color: {playerContrastColors.get(message.username)}">
         <strong>{message.username}:</strong> {message.message}
       </div>
     {/each}
