@@ -254,7 +254,7 @@ class Tanner(ONUWRole):
     def get_general_strategy_lines(self) -> List[str]:
         return [
             "If you claim to have been a Werewolf, you will likely be called a Tanner as this is a very obvious play that no Werewolf would do (unless they want people to think they're a tanner).",
-            "A Tanner can claim to be a Tanner, as no Tanner would reveal themselves, and they will likely be called as a Werewolf.",
+            "A Tanner can claim to be a Tanner, as it may make them look like a Werewolf trying to avoid being voted for. A good werewolf wouldn't be so direct early on though.",
             "In general, claiming something anyone else has claimed is a good strategy.",
             "Pretending to be any role that gains information, but not having any information to share, may make the town think you're a struggling werewolf.",
         ]

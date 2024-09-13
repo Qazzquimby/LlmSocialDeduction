@@ -100,7 +100,7 @@ class OneNightWerewolf(Game):
                     self.players,
                     message,
                     observation_type="speech",
-                    params={"speaker": speaker, "message": message},
+                    params={"speaker": speaker.name, "message": message},
                 )
 
     async def voting_phase(self) -> List[Player]:

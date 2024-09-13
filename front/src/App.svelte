@@ -105,7 +105,7 @@
     }
   }
 
-  function createAndStartGame() {
+  function newGame() {
     if (isConnected) {
       ws.send(JSON.stringify({ type: 'new_game', num_players: numPlayers }));
     } else {
@@ -121,6 +121,7 @@
         action: 'speak',
         message: newMessage
       };
+      console.log("sending ", message)
       ws.send(JSON.stringify(message));
       newMessage = '';
     }
@@ -168,10 +169,12 @@
 
   {#if !isConnected}
     <p>Disconnected...</p>
+  {:else}
+    <p>Game ID: {gameId}</p>
   {/if}
   <div class="game-controls">
     <input type="number" bind:value={numPlayers} min="3" max="10" />
-    <Button on:click={createAndStartGame}>New Game</Button>
+    <Button on:click={newGame}>New Game</Button>
   </div>
 
   <div class="game-state">

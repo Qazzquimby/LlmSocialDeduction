@@ -32,7 +32,7 @@ class Player:
         await self.observe(
             f"Your initial role is {role.name}",
             observation_type="role",
-            params={"role": role},
+            params={"role": role.name},
         )
 
     async def night_action(self, game_state: "GameState") -> Optional[str]:
