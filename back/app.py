@@ -23,24 +23,36 @@ active_connections = {}
 games = {}
 
 
-
 @app.websocket("/ws/{username}")
 async def websocket_endpoint(websocket: WebSocket, username: str):
     await websocket.accept()
-    if username not in active_connections:
-        active_connections[username] = websocket
 
-    await websocket.send_json({"type": "engine", "message": "Connection Established"})
+    active_connections[username] = websocket
 
     if username in games:
         game: OneNightWerewolf = games[username]
         game.websocket = websocket
+        await websocket.send_json(
+            {
+                "type": "game_connect",
+                "message": "Connection Established",
+                "gameId": game.id,
+            }
+        )
     else:
-        game = OneNightWerewolf(num_players=5, has_human=False, websocket=websocket)
+        game = OneNightWerewolf(num_players=5, has_human=True, websocket=websocket)
         games[username] = game
+        await websocket.send_json(
+            {
+                "type": "game_connect",
+                "message": "Connection Established",
+                "gameId": game.id,
+            }
+        )
         await game.play_game()
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)

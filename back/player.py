@@ -220,8 +220,10 @@ class AIPlayer(Player):
 
         litellm_prompt.add_message(rules, role="system")
 
-        for message in self.observations:
-            litellm_prompt = litellm_prompt.add_message(message, role="system")
+        for observation in self.observations:
+            litellm_prompt = litellm_prompt.add_message(
+                observation.message, role="system"
+            )
 
         if should_think:
             prompt = self.think_prompt + prompt

@@ -10,6 +10,7 @@
   let choices: string[] = [];
   let numPlayers = 5;
   let isConnected = false;
+  let gameId: string | null = null;
 
   function connectWebSocket() {
     ws = new WebSocket(`ws://localhost:8000/ws/${username}`);
@@ -21,6 +22,7 @@
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log("new message", data)
       handleServerMessage(data);
     };
 
@@ -42,6 +44,7 @@
   });
 
 
+  //color
   type OKLCHColor = [number, number, number]; // [lightness, chroma, hue]
 
   function generateColors(count: number, baseLightness: number = 73): OKLCHColor[] {
@@ -78,9 +81,13 @@
 
   const playerColors = generateColors(numPlayers);
   const playerContrastColors = playerColors.map((color) => getContrastColor(color));
+  // /color
 
   function handleServerMessage(data: any) {
     switch (data.type) {
+      case 'game_connect':
+        gameId = data.gameId;
+        break
       case 'game_started':
         gameState = 'Game started';
         messages = [...messages, { username: 'System', message: `Game started with players: ${data.players.join(', ')}` }];
@@ -144,6 +151,12 @@
       connectWebSocket();
     }
   }
+
+  $: gameId && (() => {
+    console.log("gameId changed to ", gameId, "clearing messages")
+    messages = []
+  });
+
 </script>
 
 <main>

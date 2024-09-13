@@ -1,6 +1,9 @@
+import random
+import string
 from typing import List
 from player import Player
 from game_state import GameState
+
 
 class Game:
     def __init__(self, num_players: int, has_human: bool = False):
@@ -9,6 +12,8 @@ class Game:
         self.players: List[Player] = []
         self.game_state: GameState = GameState()
 
+        self.id = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
     def setup_game(self) -> None:
         raise NotImplementedError("Subclasses must implement setup_game method")
 
@@ -16,4 +21,6 @@ class Game:
         raise NotImplementedError("Subclasses must implement play_game method")
 
     def check_win_condition(self, executed_players: List[Player]) -> None:
-        raise NotImplementedError("Subclasses must implement check_win_condition method")
+        raise NotImplementedError(
+            "Subclasses must implement check_win_condition method"
+        )
