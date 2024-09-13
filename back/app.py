@@ -24,6 +24,7 @@ connections: Dict[str, WebSocket] = {}
 games: Dict[str, OneNightWerewolf] = {}
 input_futures: Dict[str, asyncio.Future] = {}
 
+
 async def get_user_input(user_id: str, prompt: str, timeout: float = 300) -> str:
     if user_id not in connections:
         raise ValueError(f"No active connection for user {user_id}")
@@ -45,13 +46,14 @@ async def get_user_input(user_id: str, prompt: str, timeout: float = 300) -> str
         # Clean up the future if it's still there
         input_futures.pop(user_id, None)
 
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     await websocket.accept()
     connections[user_id] = websocket
-    
+
     if user_id not in games:
-        game = OneNightWerewolf(num_players=5, has_human=True, websocket=websocket)
+        game = OneNightWerewolf(num_players=5, has_human=True, user_id=user_id)
         games[user_id] = game
         await websocket.send_json(
             {
@@ -67,7 +69,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         game.websocket = websocket
         await websocket.send_json(
             {
-                "type": "game_reconnect",
+                "type": "game_connect",
                 "message": "Reconnected to existing game",
                 "gameId": game.id,
             }
@@ -81,11 +83,14 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 input_futures[user_id].set_result(data["message"])
             else:
                 # Handle unexpected input
-                await websocket.send_json({"type": "error", "message": "No input was expected at this time."})
+                await websocket.send_json(
+                    {"type": "error", "message": "No input was expected at this time."}
+                )
     except WebSocketDisconnect:
         logger.info(f"User {user_id} disconnected")
     finally:
         connections.pop(user_id, None)
+
 
 if __name__ == "__main__":
     import uvicorn

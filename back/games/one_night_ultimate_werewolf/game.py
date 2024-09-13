@@ -65,7 +65,10 @@ class OneNightWerewolf(Game):
 
     async def play_night_phase(self) -> None:
         await everyone_observe(
-            self.players, "Night phase begins.", observation_type="phase"
+            self.players,
+            "Night phase begins.",
+            observation_type="phase",
+            params={"phase": "night"},
         )
 
         night_roles = sorted(
@@ -81,7 +84,10 @@ class OneNightWerewolf(Game):
 
     async def play_day_phase(self) -> None:
         await everyone_observe(
-            self.players, "Day phase begins", observation_type="phase"
+            self.players,
+            "Day phase begins",
+            observation_type="phase",
+            params={"phase": "day"},
         )
 
         num_rounds = 3
@@ -105,7 +111,10 @@ class OneNightWerewolf(Game):
 
     async def voting_phase(self) -> List[Player]:
         await everyone_observe(
-            self.players, "Beginning of voting phase", observation_type="phase"
+            self.players,
+            "Beginning of voting phase",
+            observation_type="phase",
+            params={"phase": "voting"},
         )
 
         votes = {}
