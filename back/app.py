@@ -48,6 +48,11 @@ async def get_user_input(user_id: str, prompt: str, timeout: float = 300) -> str
         # Clean up the future if it's still there
         input_futures.pop(user_id, None)
 
+async def notify_next_speaker(game_id: str, player_name: str):
+    for user_id, game in games.items():
+        if game.id == game_id:
+            await connections[user_id].send_json({"type": "next_speaker", "player": player_name})
+
 
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):

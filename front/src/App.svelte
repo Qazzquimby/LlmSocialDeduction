@@ -11,6 +11,8 @@
   let numPlayers = 5;
   let isConnected = false;
   let gameId: string | null = null;
+  let isPrompted = false;
+  let currentSpeaker: string | null = null;
 
   let players: string[] = [];
 
@@ -108,6 +110,14 @@
         break;
       case 'speech':
         messages = [...messages, { username: data.player, message: data.message }];
+        currentSpeaker = null;
+        break;
+      case 'prompt':
+        isPrompted = true;
+        messages = [...messages, { username: 'System', message: data.message }];
+        break;
+      case 'next_speaker':
+        currentSpeaker = data.player;
         break;
       default:
         messages = [...messages, { username: 'System', message: data.message }];
@@ -134,6 +144,7 @@
       console.log("sending ", message)
       ws.send(JSON.stringify(message));
       newMessage = '';
+      isPrompted = false;
     }
   }
 
@@ -202,12 +213,19 @@
         </div>
       {/if}
     {/each}
+    {#if currentSpeaker}
+      <div class="current-speaker">
+        {currentSpeaker} is thinking...
+      </div>
+    {/if}
   </div>
 
-  <div class="message-input">
-    <input bind:value={newMessage} placeholder="Type a message" on:keypress={(e) => e.key === 'Enter' && sendMessage()} />
-    <Button on:click={sendMessage}>Send</Button>
-  </div>
+  {#if isPrompted}
+    <div class="message-input">
+      <input bind:value={newMessage} placeholder="Type a message" on:keypress={(e) => e.key === 'Enter' && sendMessage()} />
+      <Button on:click={sendMessage}>Send</Button>
+    </div>
+  {/if}
 
   <div class="choices">
     {#each choices as choice}
@@ -244,6 +262,12 @@
   .system-message {
     color: black;
     font-style: italic;
+  }
+
+  .current-speaker {
+    font-style: italic;
+    color: #666;
+    margin-top: 10px;
   }
 
   .message-input, .game-controls {

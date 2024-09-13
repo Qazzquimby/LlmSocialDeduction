@@ -101,6 +101,9 @@ class OneNightWerewolf(Game):
             await everyone_observe(self.players, conversation_round_message)
 
             for speaker in self.players:
+                from app import notify_next_speaker
+
+                await notify_next_speaker(self.id, speaker.name)
                 message = await speaker.speak()
                 await everyone_observe(
                     self.players,
