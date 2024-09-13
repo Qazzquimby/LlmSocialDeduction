@@ -1,8 +1,9 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from starlette.middleware.cors import CORSMiddleware
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 import asyncio
 from loguru import logger
+from typing import Dict
 
 app = FastAPI()
 
@@ -19,38 +20,72 @@ app.add_middleware(
 )
 
 # Store active connections and games
-active_connections = {}
-games = {}
+connections: Dict[str, WebSocket] = {}
+games: Dict[str, OneNightWerewolf] = {}
+input_futures: Dict[str, asyncio.Future] = {}
 
+async def get_user_input(user_id: str, prompt: str, timeout: float = 300) -> str:
+    if user_id not in connections:
+        raise ValueError(f"No active connection for user {user_id}")
 
-@app.websocket("/ws/{username}")
-async def websocket_endpoint(websocket: WebSocket, username: str):
+    # Create a future for this input request
+    future = asyncio.Future()
+    input_futures[user_id] = future
+
+    # Send the prompt to the user
+    await connections[user_id].send_json({"type": "prompt", "message": prompt})
+
+    try:
+        # Wait for the response with a timeout
+        return await asyncio.wait_for(future, timeout)
+    except asyncio.TimeoutError:
+        del input_futures[user_id]
+        raise TimeoutError(f"User {user_id} did not respond in time")
+    finally:
+        # Clean up the future if it's still there
+        input_futures.pop(user_id, None)
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
     await websocket.accept()
-
-    active_connections[username] = websocket
-
-    if username in games:
-        game: OneNightWerewolf = games[username]
+    connections[user_id] = websocket
+    
+    if user_id not in games:
+        game = OneNightWerewolf(num_players=5, has_human=True, websocket=websocket)
+        games[user_id] = game
+        await websocket.send_json(
+            {
+                "type": "game_connect",
+                "message": "Connection Established",
+                "gameId": game.id,
+            }
+        )
+        asyncio.create_task(game.play_game())
+    else:
+        # Resuming existing game
+        game = games[user_id]
         game.websocket = websocket
         await websocket.send_json(
             {
-                "type": "game_connect",
-                "message": "Connection Established",
+                "type": "game_reconnect",
+                "message": "Reconnected to existing game",
                 "gameId": game.id,
             }
         )
-    else:
-        game = OneNightWerewolf(num_players=5, has_human=True, websocket=websocket)
-        games[username] = game
-        await websocket.send_json(
-            {
-                "type": "game_connect",
-                "message": "Connection Established",
-                "gameId": game.id,
-            }
-        )
-        await game.play_game()
 
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if user_id in input_futures:
+                # Resolve the pending input future
+                input_futures[user_id].set_result(data["message"])
+            else:
+                # Handle unexpected input
+                await websocket.send_json({"type": "error", "message": "No input was expected at this time."})
+    except WebSocketDisconnect:
+        logger.info(f"User {user_id} disconnected")
+    finally:
+        connections.pop(user_id, None)
 
 if __name__ == "__main__":
     import uvicorn

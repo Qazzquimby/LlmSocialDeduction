@@ -136,23 +136,23 @@ class LocalHumanPlayer(HumanPlayer):
 
 
 class WebHumanPlayer(HumanPlayer):
-    def __init__(self, game, name: str, websocket):
+    def __init__(self, game, name: str, user_id: str):
         super().__init__(game, name)
-        self.websocket = websocket
+        self.user_id = user_id
 
     async def prompt_with(
         self, prompt: str, should_think=False, params: dict = None
     ) -> str:
-        await self.websocket.send_json({"type": "prompt", "message": prompt})
+        from app import get_user_input  # Import here to avoid circular import
         await self.print(prompt, observation_type="prompt", params=params)
-        response = await self.websocket.receive_json()
-        return response["message"]
+        return await get_user_input(self.user_id, prompt)
 
     async def print(self, message, observation_type="untyped", params: dict = None):
+        from app import connections  # Import here to avoid circular import
         json = {"type": observation_type, "message": message}
         if params:
             json = {**json, **params}
-        await self.websocket.send_json(json)
+        await connections[self.user_id].send_json(json)
 
 
 def get_rules(roles: List[Role]) -> str:

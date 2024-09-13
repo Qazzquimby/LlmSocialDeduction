@@ -12,16 +12,16 @@ from base_game import Game
 
 
 class OneNightWerewolf(Game):
-    def __init__(self, num_players: int, has_human: bool = False, websocket=None):
+    def __init__(self, num_players: int, has_human: bool = False, user_id: str = None):
         super().__init__(num_players, has_human)
-        self.websocket = websocket
+        self.user_id = user_id
 
     async def setup_game(self) -> None:
         if self.has_human:
             num_ai = self.num_players - 1
-            if self.websocket:
+            if self.user_id:
                 self.players.append(
-                    WebHumanPlayer(game=self, name="Human", websocket=self.websocket)
+                    WebHumanPlayer(game=self, name="Human", user_id=self.user_id)
                 )
             else:
                 self.players.append(LocalHumanPlayer(game=self, name="Human"))
