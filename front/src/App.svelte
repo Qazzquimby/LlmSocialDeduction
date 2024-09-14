@@ -35,10 +35,8 @@
 
     ws.onclose = () => {
       isConnected = false;
-      console.log('Disconnected, no auto reconnect');
-      // console.log('WebSocket disconnected. Attempting to reconnect...');
-      // setTimeout(connectWebSocket, 1000);
-      // todo set up auto reconnect
+      console.log('Disconnected, attempting reconnect');
+      setTimeout(connectWebSocket, 1000);
     };
 
     ws.onerror = (error) => {
