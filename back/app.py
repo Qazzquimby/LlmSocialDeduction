@@ -8,6 +8,7 @@ from loguru import logger
 from typing import Dict
 import time
 
+from message_types import GameConnectMessage, BaseMessage
 from player import WebHumanPlayer
 
 
@@ -109,11 +110,10 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         game = OneNightWerewolf(num_players=5, has_human=True, user_id=user_id)
         games[user_id] = game
         await websocket.send_json(
-            {
-                "type": "game_connect",
-                "message": "Connection Established",
-                "gameId": game.id,
-            }
+            GameConnectMessage(
+                message="Connection Established",
+                gameId=game.id
+            ).model_dump()
         )
         asyncio.create_task(game.play_game())
         logger.info(f"New game created for user {user_id}")
@@ -122,11 +122,10 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         game = games[user_id]
         game.websocket = websocket
         await websocket.send_json(
-            {
-                "type": "game_connect",
-                "message": "Reconnected to existing game",
-                "gameId": game.id,
-            }
+            GameConnectMessage(
+                message="Reconnected to existing game",
+                gameId=game.id
+            ).model_dump()
         )
         web_human = [
             player for player in game.players if isinstance(player, WebHumanPlayer)
@@ -151,7 +150,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 # Handle unexpected input
                 logger.warning(f"Unexpected input from user {user_id}: {data}")
                 await websocket.send_json(
-                    {"type": "error", "message": "No input was expected at this time."}
+                    BaseMessage(type="error", message="No input was expected at this time.").model_dump()
                 )
     except WebSocketDisconnect:
         logger.info(f"User {user_id} disconnected")

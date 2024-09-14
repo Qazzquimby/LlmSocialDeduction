@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
+  import type { BaseMessage, GameConnectMessage, GameStartedMessage, PhaseMessage, SpeechMessage, PromptMessage, NextSpeakerMessage, PlayerActionMessage } from '$lib/types';
 
-  type Message = { message: string; type: string; username: string; }
-
-  let messages: Message[] = [];
+  let messages: BaseMessage[] = [];
   let newMessage = '';
   let username = '';
   let ws: WebSocket;
@@ -95,7 +94,7 @@
 
 
 
-  function handleServerMessage(message: Message) {
+  function handleServerMessage(message: BaseEvent) {
     switch (message.type) {
       case 'game_connect':
         isConnected = true;

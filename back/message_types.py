@@ -1,32 +1,32 @@
 from pydantic import BaseModel
 from typing import Optional, List
 
-class BaseMessage(BaseModel):
+class BaseEvent(BaseModel):
     type: str
+
+class BaseMessage(BaseEvent):
+    message: str
 
 class GameConnectMessage(BaseMessage):
     type: str = "game_connect"
-    message: str
     gameId: str
 
-class GameStartedMessage(BaseMessage):
+class GameStartedMessage(BaseEvent):
     type: str = "game_started"
     players: List[str]
 
-class PhaseMessage(BaseMessage):
+class PhaseMessage(BaseEvent):
     type: str = "phase"
     phase: str
 
 class SpeechMessage(BaseMessage):
     type: str = "speech"
     username: str
-    message: str
 
 class PromptMessage(BaseMessage):
     type: str = "prompt"
-    message: str
 
-class NextSpeakerMessage(BaseMessage):
+class NextSpeakerMessage(BaseEvent):
     type: str = "next_speaker"
     player: str
 
