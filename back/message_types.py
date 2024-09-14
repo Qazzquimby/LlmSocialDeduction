@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 
 class BaseEvent(BaseModel):
@@ -8,39 +8,39 @@ class BaseEvent(BaseModel):
 
 class BaseMessage(BaseEvent):
     message: str
+    username: str = "System"
 
 
 class GameConnectMessage(BaseMessage):
-    type: str = "game_connect"
+    type: Literal["game_connect"] = "game_connect"
     gameId: str
 
 
 class GameStartedMessage(BaseEvent):
-    type: str = "game_started"
+    type: Literal["game_started"] = "game_started"
     players: List[str]
 
 
 class PhaseMessage(BaseEvent):
-    type: str = "phase"
+    type: Literal["phase"] = "phase"
     phase: str
 
 
 class SpeechMessage(BaseMessage):
-    type: str = "speech"
-    username: str
+    type: Literal["speech"] = "speech"
 
 
 class PromptMessage(BaseMessage):
-    type: str = "prompt"
+    type: Literal["prompt"] = "prompt"
 
 
 class NextSpeakerMessage(BaseEvent):
-    type: str = "next_speaker"
+    type: Literal["next_speaker"] = "next_speaker"
     player: str
 
 
 class PlayerActionMessage(BaseMessage):
-    type: str = "player_action"
+    type: Literal["player_action"] = "player_action"
     player: str
     action: str
     message: Optional[str] = None

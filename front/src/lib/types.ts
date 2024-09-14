@@ -11,36 +11,40 @@ export interface BaseEvent {
 export interface BaseMessage {
   type: string;
   message: string;
+  username?: string;
 }
 export interface GameConnectMessage {
-  type?: string;
+  type: "game_connect";
   message: string;
+  username?: string;
   gameId: string;
 }
 export interface GameStartedMessage {
-  type?: string;
+  type: "game_started";
   players: string[];
 }
 export interface NextSpeakerMessage {
-  type?: string;
+  type: "next_speaker";
   player: string;
 }
 export interface PhaseMessage {
-  type?: string;
+  type: "phase";
   phase: string;
 }
 export interface PlayerActionMessage {
-  type?: string;
+  type: "player_action";
   message?: string | null;
+  username?: string;
   player: string;
   action: string;
 }
 export interface PromptMessage {
-  type?: string;
+  type: "prompt";
   message: string;
+  username?: string;
 }
 export interface SpeechMessage {
-  type?: string;
+  type: "speech";
   message: string;
-  username: string;
+  username?: string;
 }

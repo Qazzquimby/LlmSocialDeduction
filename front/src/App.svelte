@@ -57,6 +57,12 @@
     if (username) {
       connectWebSocket();
     }
+    return () => {
+      if (ws) {
+        console.log("Closing websocket")
+        ws.close();
+      }
+    };
   });
 
 
@@ -105,44 +111,40 @@
 
 
   function handleServerMessage(message: BaseEvent) {
-    switch (message.type) {
-      case 'game_connect':
-        const gameConnectMessage = message as GameConnectMessage;
+    const handlers: { [key: string]: (msg: any) => void } = {
+      "game_connect": (msg: GameConnectMessage) => {
         isConnected = true;
-        gameId = gameConnectMessage.gameId;
-        break;
-      case 'game_started':
-        const gameStartedMessage = message as GameStartedMessage;
+        gameId = msg.gameId;
+      },
+      'game_started': (msg: GameStartedMessage) => {
         gameState = 'Game started';
-        messages.push({ type: 'game_started', message: `Game started with players: ${gameStartedMessage.players.join(', ')}`, username: 'System' });
-        players = gameStartedMessage.players;
-        break;
-      case 'phase':
-        const phaseMessage = message as PhaseMessage;
-        gameState = `${phaseMessage.phase} phase`;
-        messages.push({ type: 'phase', message: `${phaseMessage.phase} phase started`, username: 'System' });
-        break;
-      case 'speech':
-        const speechMessage = message as SpeechMessage;
-        messages.push(speechMessage);
+        messages = [...messages, { type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}` } as BaseMessage];
+        players = msg.players;
+      },
+      'phase': (msg: PhaseMessage) => {
+        gameState = `${msg.phase} phase`;
+        messages = [...messages, { type: 'phase', message: `${msg.phase} phase started` } as BaseMessage];
+      },
+      'speech': (msg: SpeechMessage) => {
+        messages = [...messages, msg];
         currentSpeaker = null;
-        break;
-      case 'prompt':
-        const promptMessage = message as PromptMessage;
+      },
+      'prompt': (msg: PromptMessage) => {
         isPrompted = true;
-        messages.push({ ...promptMessage, username: 'System' });
-        break;
-      case 'next_speaker':
-        const nextSpeakerMessage = message as NextSpeakerMessage;
-        currentSpeaker = nextSpeakerMessage.player;
-        break;
-      default:
-        if ('message' in message) {
-          messages.push({ ...message, username: 'System' });
-        } else {
-          console.warn('Received unknown message type:', message);
-        }
-        break;
+        messages = [...messages, msg];
+      },
+      'next_speaker': (msg: NextSpeakerMessage) => {
+        currentSpeaker = msg.player;
+      }
+    };
+
+    const handler = handlers[message.type];
+    if (handler) {
+      handler(message);
+    } else if ('message' in message) {
+      messages = [...messages, message as BaseMessage];
+    } else {
+      console.warn('Received unknown message type:', message);
     }
   }
 
@@ -197,7 +199,7 @@
   <h1>One Night Ultimate Werewolf</h1>
 
   <div class="username-input">
-    <input bind:value={username} placeholder="Enter your username" on:change={handleUsernameInput} />
+    <input bind:value={username} placeholder="Enter your username (default: System)" on:change={handleUsernameInput} />
   </div>
 
   {#if isConnected}

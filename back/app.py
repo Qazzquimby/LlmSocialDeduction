@@ -130,11 +130,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         ][0]
         logger.info(f"User {user_id} reconnected, catching up {web_human.name}")
         for observation in web_human.observations:
-            await web_human.print(
-                message=observation.message,
-                observation_type=observation.observation_type,
-                params=observation.params,
-            )
+            await web_human.print(observation)
 
     try:
         while True:
