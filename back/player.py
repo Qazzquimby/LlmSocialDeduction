@@ -1,8 +1,15 @@
 import asyncio
 import random
-from dataclasses import dataclass
 from typing import List, Optional, TYPE_CHECKING
-from message_types import BaseEvent, BaseMessage, SpeechMessage, PhaseMessage, PlayerActionMessage
+from message_types import (
+    BaseEvent,
+    BaseMessage,
+    SpeechMessage,
+    PhaseMessage,
+    PlayerActionMessage,
+    ObservationMessage,
+    RulesError,
+)
 from core import Prompt
 from roles import Role
 
@@ -10,8 +17,6 @@ from aioconsole import ainput
 
 if TYPE_CHECKING:
     from game_state import GameState
-
-
 
 
 class Player:
@@ -25,23 +30,23 @@ class Player:
     async def set_role(self, role: Role) -> None:
         self.role = role
         self.original_role = role
-        await self.observe(PlayerActionMessage(
-            type="player_action",
-            message=f"Your initial role is {role.name}",
-            player=self.name,
-            action="role_assignment"
-        ))
+        await self.observe(
+            PlayerActionMessage(
+                message=f"Your initial role is {role.name}",
+                player=self.name,
+                action="role_assignment",
+            )
+        )
 
     async def night_action(self, game_state: "GameState") -> Optional[str]:
         if self.role:
             action_result = await self.original_role.night_action(self, game_state)
             if action_result:
-                await self.observe(PlayerActionMessage(
-                    type="player_action",
-                    message=action_result,
-                    player=self.name,
-                    action="night_action"
-                ))
+                await self.observe(
+                    PlayerActionMessage(
+                        message=action_result, player=self.name, action="night_action"
+                    )
+                )
             return action_result
         return None
 
@@ -96,8 +101,6 @@ class Player:
 
     async def observe(self, event: BaseEvent):
         self.observations.append(event)
-        if isinstance(event, BaseMessage):
-            await self.print(event)
 
     def __str__(self):
         return self.name
@@ -157,7 +160,7 @@ class WebHumanPlayer(HumanPlayer):
     async def print(self, event: BaseEvent):
         from app import connections  # Import here to avoid circular import
 
-        await connections[self.user_id].send_json(event.dict())
+        await connections[self.user_id].send_json(event.model_dump())
 
 
 def get_rules(roles: List[Role]) -> str:
@@ -226,9 +229,14 @@ class AIPlayer(Player):
         litellm_prompt.add_message(rules, role="system")
 
         for observation in self.observations:
-            litellm_prompt = litellm_prompt.add_message(
-                observation.message, role="system"
-            )
+            if isinstance(observation, BaseMessage):
+                litellm_prompt = litellm_prompt.add_message(
+                    observation.message, role="system"
+                )
+            else:
+                litellm_prompt = litellm_prompt.add_message(
+                    str(observation.model_dump()), role="system"
+                )
 
         if should_think:
             prompt = self.think_prompt + prompt
@@ -271,23 +279,14 @@ class AIPlayer(Player):
             part_to_share = response.split("{")[-1]
             part_to_share = part_to_share.replace("}", "")
             await self.observe(
-                f"Rules Genie: Hi, I might have noticed a rules error in your last message. If this was intentional (or *I* am mistaken), just ignore me. It's also fine to pretend to make a rules error when talking.\n"
-                f"{part_to_share}",
-                observation_type="rules_error",
+                RulesError(
+                    message=(
+                        f"Rules Genie: Hi, I might have noticed a rules error in your last message. If this was intentional (or *I* am mistaken), just ignore me. It's also fine to pretend to make a rules error when talking.\n"
+                        f"{part_to_share}"
+                    ),
+                )
             )
 
 
-async def everyone_observe(
-    players, message: str, observation_type="untyped", params: dict = None
-):
-    event: BaseEvent
-    if observation_type == "speech":
-        event = SpeechMessage(message=message, username=params.get("username", "System"))
-    elif observation_type == "phase":
-        event = PhaseMessage(phase=params.get("phase", "unknown"))
-    else:
-        event = BaseMessage(type=observation_type, message=message)
-
-    await asyncio.gather(
-        *[player.observe(event) for player in players]
-    )
+async def everyone_observe(players, event: BaseEvent):
+    await asyncio.gather(*[player.observe(event) for player in players])

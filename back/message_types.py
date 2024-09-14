@@ -44,3 +44,11 @@ class PlayerActionMessage(BaseMessage):
     player: str
     action: str
     message: Optional[str] = None
+
+
+class ObservationMessage(BaseMessage):
+    type: Literal["observation"] = "observation"
+
+
+class RulesError(BaseMessage):
+    type: Literal["rules_error"] = "rules_error"

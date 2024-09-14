@@ -3,6 +3,7 @@ import random
 from typing import List
 
 from ai_models import get_random_model
+from message_types import ObservationMessage
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
@@ -45,6 +46,8 @@ class OneNightWerewolf(Game):
         await everyone_observe(
             self.players,
             f"The players in this game are: {', '.join([p.name for p in self.players])}.",
+            observation_type="game_started",
+            params={"players": [p.name for p in self.players]},
         )
 
         # Assign roles
@@ -60,7 +63,9 @@ class OneNightWerewolf(Game):
 
         for player in self.players:
             await player.observe(
-                f"Your role's strategy: {player.role.get_strategy(self.game_state)}\n"
+                ObservationMessage(
+                    message=f"Your role's strategy: {player.role.get_strategy(self.game_state)}\n"
+                )
             )
 
     async def play_night_phase(self) -> None:
@@ -137,7 +142,10 @@ class OneNightWerewolf(Game):
 
         for executed_player in executed_players:
             await everyone_observe(
-                self.players, f"\n{executed_player.name} has been executed!"
+                self.players,
+                f"\n{executed_player.name} has been executed!",
+                observation_type="player_action",
+                params={"player": executed_player.name, "action": "executed"},
             )
 
         return executed_players
@@ -151,11 +159,19 @@ class OneNightWerewolf(Game):
         ]
 
         for winner in winners:
-            await everyone_observe(self.players, f"{winner} wins!")
+            await everyone_observe(
+                self.players,
+                f"{winner} wins!",
+                observation_type="player_action",
+                params={"player": winner.name, "action": "win"},
+            )
 
         for player in self.players:
             await everyone_observe(
-                self.players, f"{player.name} was {player.role.name}."
+                self.players,
+                f"{player.name} was {player.role.name}.",
+                observation_type="player_action",
+                params={"player": player.name, "action": "reveal_role"},
             )
 
         for player in self.players:
