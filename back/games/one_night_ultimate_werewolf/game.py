@@ -93,7 +93,7 @@ class OneNightWerewolf(Game):
         num_rounds = 3
         for round_i in range(num_rounds):
             conversation_round_message = (
-                f"\nConversation Round {round_i + 1} / {num_rounds}"
+                f"Conversation Round {round_i + 1} / {num_rounds}"
             )
             if round_i + 1 == num_rounds:
                 conversation_round_message += " (FINAL CHANCE TO TALK)"

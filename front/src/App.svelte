@@ -2,7 +2,9 @@
   import { onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
 
-  let messages: Array<{ username: string; message: string }> = [];
+  type Message = { message: string; type: string; username: string; }
+
+  let messages: Message[] = [];
   let newMessage = '';
   let username = '';
   let ws: WebSocket;
@@ -93,34 +95,41 @@
 );
   // /color
 
-  function handleServerMessage(data: any) {
-    switch (data.type) {
+
+
+  function handleServerMessage(message: Message) {
+    switch (message.type) {
       case 'game_connect':
         isConnected = true;
-        gameId = data.gameId;
+        gameId = message.gameId;
         break
       case 'game_started':
         gameState = 'Game started';
-        messages = [...messages, { username: 'System', message: `Game started with players: ${data.players.join(', ')}` }];
-        players = data.players
+        message.username = 'System';
+        messages.push(message)
+        // messages = [...messages, { username: 'System', message: `Game started with players: ${message.players.join(', ')}` }];
+        players = message.players
         break;
       case 'phase':
-        gameState = `${data.phase} phase`;
-        messages = [...messages, { username: 'System', message: `${data.phase} phase started` }];
+        gameState = `${message.phase} phase`;
+        message.username = 'System';
+        messages.push(message)
         break;
       case 'speech':
-        messages = [...messages, { username: data.player, message: data.message }];
+        messages.push(message);
         currentSpeaker = null;
         break;
       case 'prompt':
         isPrompted = true;
-        messages = [...messages, { username: 'System', message: data.message }];
+        message.username = "System";
+        messages.push(message)
         break;
       case 'next_speaker':
-        currentSpeaker = data.player;
+        currentSpeaker = message.player;
         break;
       default:
-        messages = [...messages, { username: 'System', message: data.message }];
+        message.username = 'System';
+        messages.push(message)
         break;
     }
   }
@@ -203,7 +212,7 @@
 
   <div class="chat-container">
     {#each messages as message}
-      {#if message.username && message.username !== 'System'}
+      {#if message.username && message.type === "speech"}
         <div class="message player-message" style="background-color: {formatOKLCH(playerColors.get(message.username))}; color: {playerContrastColors.get(message.username)}">
           <strong>{message.username}:</strong> {message.message}
         </div>
