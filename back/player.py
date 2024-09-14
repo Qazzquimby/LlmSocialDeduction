@@ -2,6 +2,7 @@ import asyncio
 import random
 from dataclasses import dataclass
 from typing import List, Optional, TYPE_CHECKING
+from message_types import BaseEvent, BaseMessage
 from core import Prompt
 from roles import Role
 
@@ -29,17 +30,19 @@ class Player:
     async def set_role(self, role: Role) -> None:
         self.role = role
         self.original_role = role
-        await self.observe(
-            f"Your initial role is {role.name}",
-            observation_type="role",
-            params={"role": role.name},
-        )
+        await self.observe(BaseMessage(
+            type="role",
+            message=f"Your initial role is {role.name}"
+        ))
 
     async def night_action(self, game_state: "GameState") -> Optional[str]:
         if self.role:
             action_result = await self.original_role.night_action(self, game_state)
             if action_result:
-                await self.observe(action_result, observation_type="action_result")
+                await self.observe(BaseMessage(
+                    type="action_result",
+                    message=action_result
+                ))
             return action_result
         return None
 
@@ -92,8 +95,8 @@ class Player:
     async def prompt_with(self, prompt: str, should_think=False) -> str:
         raise NotImplementedError
 
-    async def observe(self, message, observation_type="untyped", params: dict = None):
-        self.observations.append(Observation(message, observation_type, params))
+    async def observe(self, event: BaseEvent):
+        self.observations.append(event)
 
     def __str__(self):
         return self.name
@@ -112,11 +115,11 @@ class HumanPlayer(Player):
         )
         return f"Human: {message}"
 
-    async def observe(self, message, observation_type="untyped", params: dict = None):
-        await super().observe(message, observation_type, params)
-        await self.print(message, observation_type, params)
+    async def observe(self, event: BaseEvent):
+        await super().observe(event)
+        await self.print(event)
 
-    async def print(self, message, observation_type="untyped", params: dict = None):
+    async def print(self, event: BaseEvent):
         raise NotImplementedError
 
     async def prompt_with(
@@ -131,8 +134,11 @@ class LocalHumanPlayer(HumanPlayer):
     ) -> str:
         return await ainput(prompt)
 
-    async def print(self, message, observation_type="untyped", params: dict = None):
-        print(message)
+    async def print(self, event: BaseEvent):
+        if isinstance(event, BaseMessage):
+            print(event.message)
+        else:
+            print(f"Event: {event.type}")
 
 
 class WebHumanPlayer(HumanPlayer):
@@ -147,13 +153,10 @@ class WebHumanPlayer(HumanPlayer):
 
         return await get_user_input(self.user_id, prompt)
 
-    async def print(self, message, observation_type="untyped", params: dict = None):
+    async def print(self, event: BaseEvent):
         from app import connections  # Import here to avoid circular import
 
-        json = {"type": observation_type, "message": message}
-        if params:
-            json = {**json, **params}
-        await connections[self.user_id].send_json(json)
+        await connections[self.user_id].send_json(event.dict())
 
 
 def get_rules(roles: List[Role]) -> str:

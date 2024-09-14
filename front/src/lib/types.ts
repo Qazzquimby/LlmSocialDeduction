@@ -5,8 +5,12 @@
 /* Do not modify it by hand - just update the pydantic models and then re-run the script
 */
 
+export interface BaseEvent {
+  type: string;
+}
 export interface BaseMessage {
   type: string;
+  message: string;
 }
 export interface GameConnectMessage {
   type?: string;
@@ -27,9 +31,9 @@ export interface PhaseMessage {
 }
 export interface PlayerActionMessage {
   type?: string;
+  message?: string | null;
   player: string;
   action: string;
-  message?: string | null;
 }
 export interface PromptMessage {
   type?: string;
@@ -37,6 +41,6 @@ export interface PromptMessage {
 }
 export interface SpeechMessage {
   type?: string;
-  username: string;
   message: string;
+  username: string;
 }

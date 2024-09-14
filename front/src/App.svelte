@@ -1,7 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
-  import type { BaseMessage, GameConnectMessage, GameStartedMessage, PhaseMessage, SpeechMessage, PromptMessage, NextSpeakerMessage, PlayerActionMessage } from '$lib/types';
+  import type {
+    BaseMessage,
+    GameConnectMessage,
+    GameStartedMessage,
+    PhaseMessage,
+    SpeechMessage,
+    PromptMessage,
+    NextSpeakerMessage,
+    PlayerActionMessage,
+    BaseEvent
+  } from '$lib/types';
 
   let messages: BaseMessage[] = [];
   let newMessage = '';
@@ -97,36 +107,41 @@
   function handleServerMessage(message: BaseEvent) {
     switch (message.type) {
       case 'game_connect':
+        const gameConnectMessage = message as GameConnectMessage;
         isConnected = true;
-        gameId = message.gameId;
-        break
+        gameId = gameConnectMessage.gameId;
+        break;
       case 'game_started':
+        const gameStartedMessage = message as GameStartedMessage;
         gameState = 'Game started';
-        message.username = 'System';
-        messages.push(message)
-        // messages = [...messages, { username: 'System', message: `Game started with players: ${message.players.join(', ')}` }];
-        players = message.players
+        messages.push({ type: 'game_started', message: `Game started with players: ${gameStartedMessage.players.join(', ')}`, username: 'System' });
+        players = gameStartedMessage.players;
         break;
       case 'phase':
-        gameState = `${message.phase} phase`;
-        message.username = 'System';
-        messages.push(message)
+        const phaseMessage = message as PhaseMessage;
+        gameState = `${phaseMessage.phase} phase`;
+        messages.push({ type: 'phase', message: `${phaseMessage.phase} phase started`, username: 'System' });
         break;
       case 'speech':
-        messages.push(message);
+        const speechMessage = message as SpeechMessage;
+        messages.push(speechMessage);
         currentSpeaker = null;
         break;
       case 'prompt':
+        const promptMessage = message as PromptMessage;
         isPrompted = true;
-        message.username = "System";
-        messages.push(message)
+        messages.push({ ...promptMessage, username: 'System' });
         break;
       case 'next_speaker':
-        currentSpeaker = message.player;
+        const nextSpeakerMessage = message as NextSpeakerMessage;
+        currentSpeaker = nextSpeakerMessage.player;
         break;
       default:
-        message.username = 'System';
-        messages.push(message)
+        if ('message' in message) {
+          messages.push({ ...message, username: 'System' });
+        } else {
+          console.warn('Received unknown message type:', message);
+        }
         break;
     }
   }
