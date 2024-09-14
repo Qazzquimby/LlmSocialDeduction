@@ -14,37 +14,37 @@ export interface BaseMessage {
   username?: string;
 }
 export interface GameConnectMessage {
-  type: "game_connect";
+  type?: "game_connect";
   message: string;
   username?: string;
   gameId: string;
 }
 export interface GameStartedMessage {
-  type: "game_started";
+  type?: "game_started";
   players: string[];
 }
 export interface NextSpeakerMessage {
-  type: "next_speaker";
+  type?: "next_speaker";
   player: string;
 }
 export interface PhaseMessage {
-  type: "phase";
+  type?: "phase";
   phase: string;
 }
 export interface PlayerActionMessage {
-  type: "player_action";
+  type?: "player_action";
   message?: string | null;
   username?: string;
   player: string;
   action: string;
 }
 export interface PromptMessage {
-  type: "prompt";
+  type?: "prompt";
   message: string;
   username?: string;
 }
 export interface SpeechMessage {
-  type: "speech";
+  type?: "speech";
   message: string;
   username?: string;
 }

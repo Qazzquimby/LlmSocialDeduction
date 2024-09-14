@@ -2,7 +2,7 @@ import asyncio
 import random
 from dataclasses import dataclass
 from typing import List, Optional, TYPE_CHECKING
-from message_types import BaseEvent, BaseMessage
+from message_types import BaseEvent, BaseMessage, SpeechMessage, PhaseMessage, PlayerActionMessage
 from core import Prompt
 from roles import Role
 
@@ -12,11 +12,6 @@ if TYPE_CHECKING:
     from game_state import GameState
 
 
-@dataclass
-class Observation:
-    message: str
-    observation_type: str = "untyped"
-    params: dict = None
 
 
 class Player:
@@ -25,23 +20,27 @@ class Player:
         self.name: str = name
         self.role: Optional[Role] = None
         self.original_role: Optional[Role] = None
-        self.observations: List[Observation] = []
+        self.observations: List[BaseEvent] = []
 
     async def set_role(self, role: Role) -> None:
         self.role = role
         self.original_role = role
-        await self.observe(BaseMessage(
-            type="role",
-            message=f"Your initial role is {role.name}"
+        await self.observe(PlayerActionMessage(
+            type="player_action",
+            message=f"Your initial role is {role.name}",
+            player=self.name,
+            action="role_assignment"
         ))
 
     async def night_action(self, game_state: "GameState") -> Optional[str]:
         if self.role:
             action_result = await self.original_role.night_action(self, game_state)
             if action_result:
-                await self.observe(BaseMessage(
-                    type="action_result",
-                    message=action_result
+                await self.observe(PlayerActionMessage(
+                    type="player_action",
+                    message=action_result,
+                    player=self.name,
+                    action="night_action"
                 ))
             return action_result
         return None
@@ -97,6 +96,8 @@ class Player:
 
     async def observe(self, event: BaseEvent):
         self.observations.append(event)
+        if isinstance(event, BaseMessage):
+            await self.print(event)
 
     def __str__(self):
         return self.name
@@ -277,11 +278,16 @@ class AIPlayer(Player):
 
 
 async def everyone_observe(
-    players, message, observation_type="untyped", params: dict = None
+    players, message: str, observation_type="untyped", params: dict = None
 ):
+    event: BaseEvent
+    if observation_type == "speech":
+        event = SpeechMessage(message=message, username=params.get("username", "System"))
+    elif observation_type == "phase":
+        event = PhaseMessage(phase=params.get("phase", "unknown"))
+    else:
+        event = BaseMessage(type=observation_type, message=message)
+
     await asyncio.gather(
-        *[
-            player.observe(message, observation_type=observation_type, params=params)
-            for player in players
-        ]
+        *[player.observe(event) for player in players]
     )
