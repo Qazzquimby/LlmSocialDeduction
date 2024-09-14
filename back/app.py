@@ -111,8 +111,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         games[user_id] = game
         await websocket.send_json(
             GameConnectMessage(
-                message="Connection Established",
-                gameId=game.id
+                message="Connection Established", gameId=game.id
             ).model_dump()
         )
         asyncio.create_task(game.play_game())
@@ -123,8 +122,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         game.websocket = websocket
         await websocket.send_json(
             GameConnectMessage(
-                message="Reconnected to existing game",
-                gameId=game.id
+                message="Reconnected to existing game", gameId=game.id
             ).model_dump()
         )
         web_human = [
@@ -150,7 +148,9 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 # Handle unexpected input
                 logger.warning(f"Unexpected input from user {user_id}: {data}")
                 await websocket.send_json(
-                    BaseMessage(type="error", message="No input was expected at this time.").model_dump()
+                    BaseMessage(
+                        type="error", message="No input was expected at this time."
+                    ).model_dump()
                 )
     except WebSocketDisconnect:
         logger.info(f"User {user_id} disconnected")
