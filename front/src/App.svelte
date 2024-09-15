@@ -121,20 +121,20 @@
       },
       'game_started': (msg: GameStartedMessage) => {
         gameState = 'Game started';
-        messages.push({ type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}` });
+        messages = [...messages, { type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}` }];
         players = msg.players;
       },
       'phase': (msg: PhaseMessage) => {
         gameState = `${msg.phase} phase`;
-        messages.push({ type: 'phase', message: `${msg.phase} phase started` });
+        messages = [...messages, { type: 'phase', message: `${msg.phase} phase started` }];
       },
       'speech': (msg: SpeechMessage) => {
-        messages.push(msg as BaseMessage)
+        messages = [...messages, msg as BaseMessage];
         currentSpeaker = null;
       },
       'prompt': (msg: PromptMessage) => {
         isPrompted = true;
-        messages.push(msg as BaseMessage);
+        messages = [...messages, msg as BaseMessage];
       },
       'next_speaker': (msg: NextSpeakerMessage) => {
         currentSpeaker = msg.player;
@@ -196,6 +196,10 @@
     messages = []
   });
 
+  function doNothingButton() {
+    console.log("do nothing button pushed")
+  }
+
 </script>
 
 <main>
@@ -219,6 +223,7 @@
   <div class="game-controls">
     <input type="number" bind:value={numPlayers} min="3" max="10" />
     <Button on:click={newGame}>New Game</Button>
+    <Button on:click={doNothingButton}>Do Nothing</Button>
   </div>
 
   <div class="game-state">

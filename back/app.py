@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from starlette.middleware.cors import CORSMiddleware
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
@@ -114,7 +113,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 message="Connection Established", gameId=game.id
             ).model_dump()
         )
-        asyncio.create_task(game.play_game())
+        game_task = asyncio.create_task(game.play_game())
         logger.info(f"New game created for user {user_id}")
     else:
         # Resuming existing game
@@ -148,8 +147,16 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                         type="error", message="No input was expected at this time."
                     ).model_dump()
                 )
+
+            # Log current game state
+            logger.info(
+                f"Current game state for user {user_id}: Phase: {game.current_phase}, Action: {game.current_action}"
+            )
+
     except WebSocketDisconnect:
         logger.info(f"User {user_id} disconnected")
+    except Exception as e:
+        logger.error(f"An error occurred for user {user_id}: {str(e)}")
     finally:
         connections.pop(user_id, None)
         logger.info(f"Connection closed for user {user_id}")

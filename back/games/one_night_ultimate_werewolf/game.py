@@ -1,6 +1,8 @@
 import asyncio
 import random
 from typing import List
+import time
+from loguru import logger
 
 from ai_models import get_random_model
 from message_types import ObservationMessage, GameStartedMessage, PhaseMessage, SpeechMessage, PlayerActionMessage
@@ -16,6 +18,9 @@ class OneNightWerewolf(Game):
     def __init__(self, num_players: int, has_human: bool = False, user_id: str = None):
         super().__init__(num_players, has_human)
         self.user_id = user_id
+        self.current_phase = "setup"
+        self.current_action = None
+        self.last_action_time = time.time()
 
     async def setup_game(self) -> None:
         if self.has_human:

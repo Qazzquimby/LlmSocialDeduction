@@ -21,7 +21,7 @@ class GameStartedMessage(BaseMessage):
     players: List[str]
 
 
-class PhaseMessage(BaseEvent):
+class PhaseMessage(BaseMessage):
     type: Literal["phase"] = "phase"
     phase: str
 
