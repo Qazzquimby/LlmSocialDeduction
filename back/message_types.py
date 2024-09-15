@@ -16,7 +16,7 @@ class GameConnectMessage(BaseMessage):
     gameId: str
 
 
-class GameStartedMessage(BaseEvent):
+class GameStartedMessage(BaseMessage):
     type: Literal["game_started"] = "game_started"
     players: List[str]
 

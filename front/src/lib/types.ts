@@ -21,11 +21,18 @@ export interface GameConnectMessage {
 }
 export interface GameStartedMessage {
   type?: "game_started";
+  message: string;
+  username?: string;
   players: string[];
 }
 export interface NextSpeakerMessage {
   type?: "next_speaker";
   player: string;
+}
+export interface ObservationMessage {
+  type?: "observation";
+  message: string;
+  username?: string;
 }
 export interface PhaseMessage {
   type?: "phase";
@@ -40,6 +47,11 @@ export interface PlayerActionMessage {
 }
 export interface PromptMessage {
   type?: "prompt";
+  message: string;
+  username?: string;
+}
+export interface RulesError {
+  type?: "rules_error";
   message: string;
   username?: string;
 }

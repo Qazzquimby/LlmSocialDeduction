@@ -44,8 +44,11 @@
 
     ws.onclose = () => {
       isConnected = false;
-      console.log('Disconnected, attempting reconnect');
-      setTimeout(connectWebSocket, 1000);
+      if (username) {
+        console.log('Disconnected, attempting reconnect for ', username);
+        setTimeout(connectWebSocket, 1000);
+      }
+
     };
 
     ws.onerror = (error) => {
@@ -118,20 +121,20 @@
       },
       'game_started': (msg: GameStartedMessage) => {
         gameState = 'Game started';
-        messages = [...messages, { type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}` } as BaseMessage];
+        messages.push({ type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}` });
         players = msg.players;
       },
       'phase': (msg: PhaseMessage) => {
         gameState = `${msg.phase} phase`;
-        messages = [...messages, { type: 'phase', message: `${msg.phase} phase started` } as BaseMessage];
+        messages.push({ type: 'phase', message: `${msg.phase} phase started` });
       },
       'speech': (msg: SpeechMessage) => {
-        messages = [...messages, msg];
+        messages.push(msg as BaseMessage)
         currentSpeaker = null;
       },
       'prompt': (msg: PromptMessage) => {
         isPrompted = true;
-        messages = [...messages, msg];
+        messages.push(msg as BaseMessage);
       },
       'next_speaker': (msg: NextSpeakerMessage) => {
         currentSpeaker = msg.player;
@@ -199,7 +202,7 @@
   <h1>One Night Ultimate Werewolf</h1>
 
   <div class="username-input">
-    <input bind:value={username} placeholder="Enter your username (default: System)" on:change={handleUsernameInput} />
+    <input bind:value={username} placeholder="Enter your username" on:change={handleUsernameInput} />
   </div>
 
   {#if isConnected}
@@ -232,7 +235,7 @@
         </div>
       {:else}
         <div class="message system-message">
-          <strong>{message.username}:</strong> {message.message}
+          <strong>System:</strong> {message.message}
         </div>
       {/if}
     {/each}

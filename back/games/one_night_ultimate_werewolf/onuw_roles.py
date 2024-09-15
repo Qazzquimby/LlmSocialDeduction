@@ -1,6 +1,7 @@
 import random
 from typing import List, TYPE_CHECKING, Optional
 
+from message_types import ObservationMessage
 from roles import Role, RoleInteraction
 
 if TYPE_CHECKING:
@@ -342,7 +343,9 @@ class Thing(ONUWRole):
         if len(choices) == 1 and 1 <= choices[0] <= len(adjacent_players):
             target = adjacent_players[choices[0] - 1]
             await target.observe(
-                "An player before or after you in turn order is the Thing and tapped you."
+                ObservationMessage(
+                    message="A player before or after you in turn order is the Thing and tapped you."
+                )
             )
             return f"You tap {target.name}."
         else:
