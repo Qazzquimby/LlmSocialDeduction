@@ -5,7 +5,13 @@ import time
 from loguru import logger
 
 from ai_models import get_random_model
-from message_types import ObservationMessage, GameStartedMessage, PhaseMessage, SpeechMessage, PlayerActionMessage
+from message_types import (
+    ObservationMessage,
+    GameStartedMessage,
+    PhaseMessage,
+    SpeechMessage,
+    PlayerActionMessage,
+)
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
@@ -52,8 +58,8 @@ class OneNightWerewolf(Game):
             self.players,
             GameStartedMessage(
                 message=f"The players in this game are: {', '.join([p.name for p in self.players])}.",
-                players=[p.name for p in self.players]
-            )
+                players=[p.name for p in self.players],
+            ),
         )
 
         # Assign roles
@@ -64,7 +70,7 @@ class OneNightWerewolf(Game):
             self.players,
             ObservationMessage(
                 message=f"The full role pool in this game are: {', '.join([role.name for role in roles_in_game])}. Remember that 3 of them are in the center, not owned by other players."
-            )
+            ),
         )
         self.game_state.add_center_cards(center_cards)
         self.game_state.set_players(self.players)
@@ -78,11 +84,7 @@ class OneNightWerewolf(Game):
 
     async def play_night_phase(self) -> None:
         await everyone_observe(
-            self.players,
-            PhaseMessage(
-                message="Night phase begins.",
-                phase="night"
-            )
+            self.players, PhaseMessage(message="Night phase begins.", phase="night")
         )
 
         night_roles = sorted(
@@ -98,11 +100,7 @@ class OneNightWerewolf(Game):
 
     async def play_day_phase(self) -> None:
         await everyone_observe(
-            self.players,
-            PhaseMessage(
-                message="Day phase begins",
-                phase="day"
-            )
+            self.players, PhaseMessage(message="Day phase begins", phase="day")
         )
 
         num_rounds = 3
@@ -114,8 +112,7 @@ class OneNightWerewolf(Game):
                 conversation_round_message += " (FINAL CHANCE TO TALK)"
 
             await everyone_observe(
-                self.players,
-                ObservationMessage(message=conversation_round_message)
+                self.players, ObservationMessage(message=conversation_round_message)
             )
 
             for speaker in self.players:
@@ -124,20 +121,13 @@ class OneNightWerewolf(Game):
                 await notify_next_speaker(self.id, speaker.name)
                 message = await speaker.speak()
                 await everyone_observe(
-                    self.players,
-                    SpeechMessage(
-                        message=message,
-                        username=speaker.name
-                    )
+                    self.players, SpeechMessage(message=message, username=speaker.name)
                 )
 
     async def voting_phase(self) -> List[Player]:
         await everyone_observe(
             self.players,
-            PhaseMessage(
-                message="Beginning of voting phase",
-                phase="voting"
-            )
+            PhaseMessage(message="Beginning of voting phase", phase="voting"),
         )
 
         votes = {}
@@ -161,8 +151,8 @@ class OneNightWerewolf(Game):
                 PlayerActionMessage(
                     message=f"\n{executed_player.name} has been executed!",
                     player=executed_player.name,
-                    action="executed"
-                )
+                    action="executed",
+                ),
             )
 
         return executed_players
@@ -179,10 +169,8 @@ class OneNightWerewolf(Game):
             await everyone_observe(
                 self.players,
                 PlayerActionMessage(
-                    message=f"{winner} wins!",
-                    player=winner.name,
-                    action="win"
-                )
+                    message=f"{winner} wins!", player=winner.name, action="win"
+                ),
             )
 
         for player in self.players:
@@ -191,8 +179,8 @@ class OneNightWerewolf(Game):
                 PlayerActionMessage(
                     message=f"{player.name} was {player.role.name}.",
                     player=player.name,
-                    action="reveal_role"
-                )
+                    action="reveal_role",
+                ),
             )
 
         for player in self.players:
