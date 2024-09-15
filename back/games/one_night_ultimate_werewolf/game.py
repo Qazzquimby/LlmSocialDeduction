@@ -2,7 +2,6 @@ import asyncio
 import random
 from typing import List
 import time
-from loguru import logger
 
 from ai_models import get_random_model
 from message_types import (
