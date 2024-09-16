@@ -27,12 +27,19 @@ class OneNightWerewolf(Game):
         self.current_action = None
         self.last_action_time = time.time()
 
+        self.game_manager = None
+
     async def setup_game(self) -> None:
         if self.has_human:
             num_ai = self.num_players - 1
             if self.user_id:
                 self.players.append(
-                    WebHumanPlayer(game=self, name="Human", user_id=self.user_id)
+                    WebHumanPlayer(
+                        game=self,
+                        name="Human",
+                        user_id=self.user_id,
+                        game_manager=self.game_manager,
+                    )
                 )
             else:
                 self.players.append(LocalHumanPlayer(game=self, name="Human"))

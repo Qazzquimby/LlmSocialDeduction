@@ -6,7 +6,7 @@ from loguru import logger
 from typing import Dict
 import time
 
-from message_types import GameConnectMessage, BaseMessage
+from message_types import GameConnectMessage, BaseMessage, PromptMessage
 from player import WebHumanPlayer
 
 
@@ -68,7 +68,7 @@ class GameManager:
         logger.info(f"Game ended due to inactive {user_id}")
 
     async def get_user_input(
-        self, user_id: str, prompt: str, timeout: float = 300
+        self, user_id: str, prompt_event: PromptMessage, timeout: float = 300
     ) -> str:
         if user_id not in self.connections:
             raise ValueError(f"No active connection for user {user_id}")
@@ -78,7 +78,7 @@ class GameManager:
         self.input_futures[user_id] = future
 
         # Send the prompt to the user
-        await self.connections[user_id].send_json({"type": "prompt", "message": prompt})
+        await self.connections[user_id].send_json(prompt_event.model_dump())
 
         try:
             # Wait for the response with a timeout
@@ -154,7 +154,7 @@ class GameManager:
             logger.info(f"Connection closed for user {user_id}")
 
     async def cleanup_if_inactive(self):
-        # needs to go in a task
+        # todo needs to go in a task
         while True:
             current_time = time.time()
             for user_id, last_time in list(self.last_activity.items()):
@@ -172,6 +172,8 @@ class ServerState:
         game_manager = GameManager(
             OneNightWerewolf(num_players=5, has_human=True, user_id=user_id)
         )
+        game_manager.game.game_manager = game_manager  # gross
+
         game_manager.connections[user_id] = websocket
         self.game_id_to_game_manager[game_manager.game.id] = game_manager
         await game_manager.start()

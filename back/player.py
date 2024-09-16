@@ -144,22 +144,23 @@ class LocalHumanPlayer(HumanPlayer):
             print(f"Event: {event.type}")
 
 
+from message_types import PromptMessage
+
+
 class WebHumanPlayer(HumanPlayer):
-    def __init__(self, game, name: str, user_id: str):
+    def __init__(self, game, name: str, user_id: str, game_manager):
         super().__init__(game, name)
         self.user_id = user_id
+        self.game_manager = game_manager
 
     async def prompt_with(
         self, prompt: str, should_think=False, params: dict = None
     ) -> str:
-        from app import get_user_input  # Import here to avoid circular import
-
-        return await get_user_input(self.user_id, prompt)
+        prompt_event = PromptMessage(message=prompt, username="System")
+        return await self.game_manager.get_user_input(self.user_id, prompt_event)
 
     async def print(self, event: BaseEvent):
-        from app import connections  # Import here to avoid circular import
-
-        await connections[self.user_id].send_json(event.model_dump())
+        await self.game_manager.connections[self.user_id].send_json(event.model_dump())
 
 
 def get_rules(roles: List[Role]) -> str:
