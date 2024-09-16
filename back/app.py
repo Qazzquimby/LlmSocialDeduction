@@ -57,16 +57,6 @@ class GameManager:
     def players(self):
         return self.game.game_state.players
 
-    async def cleanup_if_inactive(self):
-        # needs to go in a task
-        while True:
-            current_time = time.time()
-            for user_id, last_time in list(self.last_activity.items()):
-                if current_time - last_time > self.GAME_TIMEOUT:
-                    logger.info(f"Cleaning up inactive game for user {user_id}")
-                    await self.end_game(user_id)
-            await asyncio.sleep(60 * 5)  # Check every 5min
-
     async def end_game(self, user_id: UserID):
         if user_id in self.connections:
             await self.connections[user_id].send_json(
@@ -162,6 +152,16 @@ class GameManager:
         finally:
             self.connections.pop(user_id, None)
             logger.info(f"Connection closed for user {user_id}")
+
+    async def cleanup_if_inactive(self):
+        # needs to go in a task
+        while True:
+            current_time = time.time()
+            for user_id, last_time in list(self.last_activity.items()):
+                if current_time - last_time > self.GAME_TIMEOUT:
+                    logger.info(f"Cleaning up inactive game for user {user_id}")
+                    await self.end_game(user_id)
+            await asyncio.sleep(60 * 5)  # Check every 5min
 
 
 class ServerState:
