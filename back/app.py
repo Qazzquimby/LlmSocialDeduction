@@ -40,16 +40,6 @@ class GameManager:
         self.last_activity: Dict[UserID, float] = {}
         self.message_queues: Dict[UserID, asyncio.Queue] = {}
 
-    async def start(self):
-        for websocket in self.connections.values():
-            await websocket.send_json(
-                GameConnectMessage(
-                    message="Connection Established", gameId=self.game.id
-                ).model_dump()
-            )
-        asyncio.create_task(self.game.play_game(), name=f"play_game, {self.game.id}")
-        logger.info(f"New game created, {self.game.id}")
-
     async def resume_game(self, websocket: WebSocket, user_id: UserID):
         await self.connect_player(user_id=user_id, websocket=websocket)
         await websocket.send_json(
@@ -194,6 +184,18 @@ def get_server_state():
     return _server_state
 
 
+async def listen_for_player_input(game_manager, websocket, user_id):
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await game_manager.message_queues[user_id].put(data)
+    except WebSocketDisconnect:
+        game_manager.disconnect(user_id)
+    except Exception as e:
+        logger.error(f"Error in WebSocket handler for user {user_id}: {str(e)}")
+        raise
+
+
 @app.get("/debug")
 async def debug():
     print("DEBUG")
@@ -213,23 +215,24 @@ async def websocket_endpoint(
         if game_manager.has_player(user_id):
             await game_manager.resume_game(websocket=websocket, user_id=user_id)
             found_game_with_player = True
-            break
+
+            await listen_for_player_input(
+                game_manager=game_manager, websocket=websocket, user_id=user_id
+            )
+            return
 
     if not found_game_with_player:
         # no existing game found
         game_manager = await server_state.start_new_game(
             websocket=websocket, user_id=user_id
         )
-
-    try:
-        while True:
-            data = await websocket.receive_json()
-            await game_manager.message_queues[user_id].put(data)
-    except WebSocketDisconnect:
-        game_manager.disconnect(user_id)
-    except Exception as e:
-        logger.error(f"Error in WebSocket handler for user {user_id}: {str(e)}")
-        raise
+        listen_task = listen_for_player_input(
+            game_manager=game_manager, websocket=websocket, user_id=user_id
+        )
+        run_game_task = asyncio.create_task(
+            game_manager.game.play_game(), name=f"play_game, {game_manager.game.id}"
+        )
+        await asyncio.gather(listen_task, run_game_task)
 
 
 if __name__ == "__main__":
