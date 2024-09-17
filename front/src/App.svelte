@@ -13,7 +13,18 @@
     BaseEvent
   } from '$lib/types';
 
-  let messages: BaseMessage[] = [];
+  let messages: BaseMessage[] = [
+    {
+      type: "Phase",
+      message: "This is an important announcement",
+      username: "System"
+    },
+          {
+      type: "blah",
+      message: "Blah",
+      username: "Ricky"
+    }
+  ];
   let newMessage = '';
   let username = '';
   let ws: WebSocket;
@@ -249,9 +260,7 @@
       p="2"
       w="16"
     />
-    <Button on:click={newGame} bg="indigo-600" hover="bg-indigo-700">New Game</Button>
-    <Button on:click={doNothingButton} bg="gray-600" hover="bg-gray-700">Do Nothing</Button>
-    <Button on:click={debugBackButton} bg="purple-600" hover="bg-purple-700">Debug Back</Button>
+<!--    <Button on:click={newGame} bg="indigo-600" hover="bg-indigo-700">New Game</Button>-->
   </div>
 
   <div mb="4">
@@ -305,5 +314,10 @@
     {#each choices as choice}
       <Button on:click={() => makeChoice(choice)} bg="blue-600" hover="bg-blue-700">{choice}</Button>
     {/each}
+  </div>
+
+  <div flex>
+    <Button on:click={doNothingButton} bg="gray-600" hover="bg-gray-700">Do Nothing</Button>
+    <Button on:click={debugBackButton} bg="purple-600" hover="bg-purple-700">Debug Back</Button>
   </div>
 </main>
