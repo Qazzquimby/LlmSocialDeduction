@@ -65,7 +65,6 @@ class OneNightWerewolf(Game):
 
         random.shuffle(self.players)
 
-        logger.info("About to call setup everyone_observe")
         await everyone_observe(
             self.players,
             GameStartedMessage(

@@ -70,11 +70,13 @@ class GameManager:
 
     async def get_input(self, user_id: UserID, message: BaseEvent):
         await self.send_message(user_id=user_id, message=message)
-        return await self._receive_message(user_id)
+        message = await self._receive_message(user_id)
+        return message
 
     async def _receive_message(self, user_id: UserID):
         if user_id in self.message_queues:
-            return await self.message_queues[user_id].get()
+            message = await self.message_queues[user_id].get()
+            return message
 
     def has_player(self, user_id: UserID):
         return user_id in [p.name for p in self.players]
@@ -93,76 +95,12 @@ class GameManager:
         self.game_over = True
         logger.info(f"Game ended due to inactive {user_id}")
 
-    # async def get_user_input(
-    #     self, user_id: str, prompt_event: PromptMessage, timeout: float = 300
-    # ) -> str:
-    #     if user_id not in self.connections:
-    #         raise ValueError(f"No active connection for user {user_id}")
-    #
-    #     # Create a future for this input request
-    #     future = asyncio.Future()
-    #     self.input_futures[user_id] = future
-    #
-    #     # Send the prompt to the user
-    #     await self.connections[user_id].send_json(prompt_event.model_dump())
-    #
-    #     try:
-    #         # Wait for the response with a timeout
-    #         result = await asyncio.wait_for(future, timeout)
-    #         self.last_activity[user_id] = time.time()
-    #         return result
-    #     except asyncio.TimeoutError:
-    #         del self.input_futures[user_id]
-    #         raise TimeoutError(f"User {user_id} did not respond in time")
-    #     finally:
-    #         # Clean up the future if it's still there
-    #         await self.input_futures.pop(user_id, None)
-    #
     async def notify_next_speaker(self, player_name: str):
         for user_id in self.connections:
             await self.connections[user_id].send_json(
                 {"type": "next_speaker", "player": player_name}
             )
             self.last_activity[user_id] = time.time()
-
-    #
-    # async def handle_input(self):
-    #     while True:
-    #         for user_id in self.connections.keys():
-    #             await self.handle_input_for_player(user_id)
-    #
-    # async def handle_input_for_player(self, user_id: UserID):
-    #     try:
-    #         websocket = self.connections[user_id]
-    #
-    #         data = await websocket.receive_json()
-    #         self.last_activity[user_id] = time.time()
-    #         logger.debug(f"Received data from user {user_id}: {data}")
-    #         if user_id in self.input_futures:
-    #             # Resolve the pending input future
-    #             self.input_futures[user_id].set_result(data["message"])
-    #         else:
-    #             # Handle unexpected input
-    #             logger.warning(f"Unexpected input from user {user_id}: {data}")
-    #             await websocket.send_json(
-    #                 BaseMessage(
-    #                     type="error", message="No input was expected at this time."
-    #                 ).model_dump()
-    #             )
-    #
-    #         # Log current game state
-    #         logger.info(
-    #             f"Current game state for user {user_id}: "
-    #             f"Phase: {self.game.current_phase}, "
-    #             f"Action: {self.game.current_action}"
-    #         )
-    #     except WebSocketDisconnect:
-    #         logger.info(f"User {user_id} disconnected")
-    #     except Exception as e:
-    #         logger.error(f"An error occurred for user {user_id}: {str(e)}")
-    #     finally:
-    #         self.connections.pop(user_id, None)
-    #         logger.info(f"Connection closed for user {user_id}")
 
 
 class ServerState:
