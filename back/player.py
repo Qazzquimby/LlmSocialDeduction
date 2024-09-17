@@ -1,6 +1,9 @@
 import asyncio
 import random
 from typing import Optional, TYPE_CHECKING
+
+from loguru import logger
+
 from message_types import (
     BaseEvent,
     BaseMessage,
@@ -99,8 +102,6 @@ class Player:
 
     async def observe(self, event: BaseEvent):
         self.observations.append(event)
-        if isinstance(self, HumanPlayer):
-            await self.print(event)
 
     def __str__(self):
         return self.name
@@ -121,6 +122,7 @@ class HumanPlayer(Player):
 
     async def observe(self, event: BaseEvent):
         await super().observe(event)
+        await self.print(event)
 
     async def print(self, event: BaseEvent):
         raise NotImplementedError
@@ -160,7 +162,8 @@ class WebHumanPlayer(HumanPlayer):
         return await self.game_manager.get_user_input(self.user_id, prompt_event)
 
     async def print(self, event: BaseEvent):
-        await self.game_manager.connections[self.user_id].send_json(event.model_dump())
+        self.game_manager.send_user_print(self.user_id, event)
+        # await self.game_manager.connections[self.user_id].send_json(event.model_dump())
 
 
 def get_rules(roles: List[Role]) -> str:
@@ -291,4 +294,9 @@ class AIPlayer(Player):
 
 
 async def everyone_observe(players: List[Player], event: BaseEvent):
-    await asyncio.gather(*[player.observe(event) for player in players])
+    # await asyncio.gather(*[player.observe(event) for player in players])
+
+    for player in players:
+        logger.info(f"{player.name} observing: {event}")
+        await player.observe(event)
+        # todo go back to being synchronized once its working. ugh.

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from starlette.middleware.cors import CORSMiddleware
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 import asyncio
@@ -9,8 +9,7 @@ import time
 from message_types import GameConnectMessage, BaseMessage, PromptMessage
 from player import WebHumanPlayer
 
-
-app = FastAPI()
+app = FastAPI(debug=True)
 
 # Configure loguru
 logger.add("app.log", rotation="500 MB", level="DEBUG")
@@ -179,11 +178,25 @@ class ServerState:
         await game_manager.start()
 
 
-server_state = ServerState()
+_server_state = ServerState()
+
+
+def get_server_state():
+    return _server_state
+
+
+@app.get("/debug")
+async def debug():
+    print("DEBUG")
+    return
 
 
 @app.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: UserID):
+async def websocket_endpoint(
+    websocket: WebSocket,
+    user_id: UserID,
+    server_state: ServerState = Depends(get_server_state),
+):
     await websocket.accept()
 
     logger.info(f"User {user_id} connected")

@@ -1,3 +1,5 @@
+from loguru import logger
+
 import asyncio
 import random
 from typing import List
@@ -10,6 +12,7 @@ from message_types import (
     PhaseMessage,
     SpeechMessage,
     PlayerActionMessage,
+    BaseMessage,
 )
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
@@ -30,6 +33,7 @@ class OneNightWerewolf(Game):
         self.game_manager = None
 
     async def setup_game(self) -> None:
+        logger.info("Setting up game")
         if self.has_human:
             num_ai = self.num_players - 1
             if self.user_id:
@@ -41,6 +45,16 @@ class OneNightWerewolf(Game):
                         game_manager=self.game_manager,
                     )
                 )
+                for player in self.players:
+                    if isinstance(player, WebHumanPlayer):
+                        print("going to observe")
+                        logger.info("Going to observe")
+                        await player.observe(
+                            BaseMessage(type="test", message="testing hello")
+                        )
+                        print("just observed")
+                        logger.info("Just observe")
+
             else:
                 self.players.append(LocalHumanPlayer(game=self, name="Human"))
         else:
@@ -60,6 +74,7 @@ class OneNightWerewolf(Game):
 
         random.shuffle(self.players)
 
+        logger.info("About to call setup everyone_observe")
         await everyone_observe(
             self.players,
             GameStartedMessage(
@@ -89,6 +104,7 @@ class OneNightWerewolf(Game):
             )
 
     async def play_night_phase(self) -> None:
+        logger.info("Starting night phase")
         await everyone_observe(
             self.players, PhaseMessage(message="Night phase begins.", phase="night")
         )

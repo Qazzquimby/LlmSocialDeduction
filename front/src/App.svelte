@@ -200,6 +200,13 @@
     console.log("do nothing button pushed")
   }
 
+  function debugBackButton() {
+    fetch("http://localhost:8000/debug")
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error(error));
+  }
+
 </script>
 
 <main>
@@ -224,6 +231,7 @@
     <input type="number" bind:value={numPlayers} min="3" max="10" />
     <Button on:click={newGame}>New Game</Button>
     <Button on:click={doNothingButton}>Do Nothing</Button>
+    <Button on:click={debugBackButton}>Debug Back</Button>
   </div>
 
   <div class="game-state">
