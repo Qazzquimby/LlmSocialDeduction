@@ -220,91 +220,91 @@
 
 </script>
 
-<main bg="dark-900" text="gray-100" min-h-screen flex="~ col" p="4" items-center font-sans>
+<main bg-dark-900 text-gray-100 min-h-screen flex-col p-4 items-center font-sans>
   <div max-w-3xl p-4 w-full>
-    <h1 text="3xl center" font="bold" mb="6" text-shadow="sm neon-blue">One Night Ultimate Werewolf</h1>
+    <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue>One Night Ultimate Werewolf</h1>
 
-    <div mb="4" flex="~ gap-2" items-center>
+    <div mb-4 flex gap-2 items-center>
       <input 
         bind:value={username} 
         placeholder="Username" 
         on:change={handleUsernameInput}
-        bg="dark-800"
-        text="gray-100"
-        border="1 gray-700"
+        bg-dark-800
+        text-gray-100
+        border-gray-700
         rounded
-        p="2"
-        w="40"
+        p-2
+        w-40
       />
       {#if isConnected}
-        <span text="green-400">Connected</span>
+        <span text-green-400>Connected</span>
         {#if gameId}
           <span>to {gameId}</span>
         {/if}
       {:else}
-        <span text="red-400">Disconnected</span>
+        <span text-red-400>Disconnected</span>
         {#if gameId}
           <span>from {gameId}</span>
         {/if}
       {/if}
     </div>
 
-    <div mb="4">
+    <div mb-4>
       {#if gameState}
-        <p bg="dark-800" p="2" rounded text="lg">Current game state: {gameState}</p>
+        <p bg-dark-800 p-2 rounded text-lg>Current game state: {gameState}</p>
       {/if}
     </div>
 
-    <div flex-grow overflow-y-auto bg="dark-800" rounded p="4" mb="4" h="64">
+    <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4 h-64>
     {#each messages as { type, username, message }}
       {#if username && type === "speech"}
         <div 
-          mb="2" 
-          p="2" 
+          mb-2 
+          p-2 
           rounded 
           style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
         >
           <strong>{username}:</strong> {message}
         </div>
       {:else}
-        <div mb="2" italic text="gray-400">
+        <div mb-2 italic text-gray-400>
           <strong>System:</strong> {message}
         </div>
       {/if}
     {/each}
     {#if currentSpeaker}
-      <div mt="2" italic text="gray-400">
+      <div mt-2 italic text-gray-400>
         {currentSpeaker} is thinking...
       </div>
     {/if}
   </div>
 
     {#if isPrompted}
-      <div flex="~ gap-2" mb="4">
+      <div flex gap-2 mb-4>
         <input 
           bind:value={newMessage} 
           placeholder="Type a message" 
           on:keypress={(e) => e.key === 'Enter' && sendMessage()}
-          bg="dark-800"
-          text="gray-100"
-          border="1 gray-700"
+          bg-dark-800
+          text-gray-100
+          border-gray-700
           rounded
-          p="2"
+          p-2
           flex-grow
         />
         <Button on:click={sendMessage}>Send</Button>
       </div>
     {/if}
 
-    <div flex="~ wrap gap-2">
+    <div flex flex-wrap gap-2>
       {#each choices as choice}
         <Button on:click={() => makeChoice(choice)}>{choice}</Button>
       {/each}
     </div>
 
-    <div flex="~ gap-2" mt="4">
-      <Button on:click={doNothingButton} bg="gray-600" hover="bg-gray-700" text-white>Do Nothing</Button>
-      <Button on:click={debugBackButton} bg="purple-600" hover="bg-purple-700" text-white>Debug Back</Button>
+    <div flex gap-2 mt-4>
+      <Button on:click={doNothingButton}>Do Nothing</Button>
+      <Button on:click={debugBackButton}>Debug Back</Button>
     </div>
   </div>
 </main>
