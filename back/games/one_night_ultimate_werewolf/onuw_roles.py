@@ -389,9 +389,7 @@ class Doppelganger(ONUWRole):
                 player, game_state
             )
             if second_night_action_text:
-                action_text += (
-                    f"\nThen, as the {player.role.name}: " + second_night_action_text
-                )
+                action_text += f"\nThen, as the new role: " + second_night_action_text
             return action_text
         else:
             return "Invalid choice. You lose your night action."

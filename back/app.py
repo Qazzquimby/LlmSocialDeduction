@@ -75,15 +75,20 @@ class GameManager:
 
     async def _receive_message(self, user_id: UserID):
         if user_id in self.message_queues:
-            message = await self.message_queues[user_id].get()
+            message_dict = await self.message_queues[user_id].get()
+            message = message_dict["message"]
             return message
 
     def has_player(self, user_id: UserID):
-        return user_id in [p.name for p in self.players]
+        return user_id in [p.user_id for p in self.web_players]
 
     @property
     def players(self):
         return self.game.game_state.players
+
+    @property
+    def web_players(self):
+        return [p for p in self.players if isinstance(p, WebHumanPlayer)]
 
     async def end_game(self, user_id: UserID):
         if user_id in self.connections:
