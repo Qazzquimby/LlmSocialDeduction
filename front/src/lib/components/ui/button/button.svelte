@@ -15,7 +15,7 @@
 
 <ButtonPrimitive.Root
 	{builders}
-	class={cn(buttonVariants({ variant, size, className }))}
+	class={cn(buttonVariants({ variant, size, className }), "bg-transparent hover:bg-primary-500 text-primary-500 hover:text-primary-50")}
 	type="button"
 	{...$$restProps}
 	on:click

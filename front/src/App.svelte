@@ -9,18 +9,17 @@
     SpeechMessage,
     PromptMessage,
     NextSpeakerMessage,
-    PlayerActionMessage,
     BaseEvent
   } from '$lib/types';
 
   let messages: BaseMessage[] = [
     {
-      type: "Phase",
+      type: "phase",
       message: "This is an important announcement",
       username: "System"
     },
           {
-      type: "blah",
+      type: "speech",
       message: "Blah",
       username: "Ricky"
     }
@@ -111,8 +110,13 @@
   }
 
   function formatOKLCH(color: OKLCHColor): string {
+    try {
       const [l, c, h] = color;
       return `oklch(${l.toFixed(0)}% ${c.toFixed(3)} ${h.toFixed(0)})`;
+    } catch (TypeError) {
+      return 'black';
+    }
+
   }
 
   $: playerColorList = generateColors(numPlayers)
@@ -216,73 +220,55 @@
 
 </script>
 
-<main bg="dark-800" text="gray-100" min-h-screen flex="~ col" p="4">
-  <h1 text="3xl center" font="bold" mb="6" text-shadow="sm neon-blue">One Night Ultimate Werewolf</h1>
+<main bg="dark-900" text="gray-100" min-h-screen flex="~ col" p="4" items-center font-sans>
+  <div max-w-3xl p-4 w-full>
+    <h1 text="3xl center" font="bold" mb="6" text-shadow="sm neon-blue">One Night Ultimate Werewolf</h1>
 
-  <div mb="4">
-    <input 
-      bind:value={username} 
-      placeholder="Enter your username" 
-      on:change={handleUsernameInput}
-      bg="dark-700"
-      text="gray-100"
-      border="1 gray-600"
-      rounded
-      p="2"
-      w="full"
-    />
-  </div>
-
-  <div mb="4" flex="~ gap-2" items-center>
-    {#if isConnected}
-      <span text="green-400">Connected</span>
-      {#if gameId}
-        <span>to {gameId}</span>
+    <div mb="4" flex="~ gap-2" items-center>
+      <input 
+        bind:value={username} 
+        placeholder="Username" 
+        on:change={handleUsernameInput}
+        bg="dark-800"
+        text="gray-100"
+        border="1 gray-700"
+        rounded
+        p="2"
+        w="40"
+      />
+      {#if isConnected}
+        <span text="green-400">Connected</span>
+        {#if gameId}
+          <span>to {gameId}</span>
+        {/if}
+      {:else}
+        <span text="red-400">Disconnected</span>
+        {#if gameId}
+          <span>from {gameId}</span>
+        {/if}
       {/if}
-    {:else}
-      <span text="red-400">Disconnected</span>
-      {#if gameId}
-        <span>from {gameId}</span>
+    </div>
+
+    <div mb="4">
+      {#if gameState}
+        <p bg="dark-800" p="2" rounded text="lg">Current game state: {gameState}</p>
       {/if}
-    {/if}
-  </div>
+    </div>
 
-  <div class="game-controls" flex="~ wrap gap-2" mb="4">
-    <input 
-      type="number" 
-      bind:value={numPlayers} 
-      min="3" 
-      max="10"
-      bg="dark-700"
-      text="gray-100"
-      border="1 gray-600"
-      rounded
-      p="2"
-      w="16"
-    />
-<!--    <Button on:click={newGame} bg="indigo-600" hover="bg-indigo-700">New Game</Button>-->
-  </div>
-
-  <div mb="4">
-    {#if gameState}
-      <p bg="dark-700" p="2" rounded text="lg">Current game state: {gameState}</p>
-    {/if}
-  </div>
-
-  <div flex-grow overflow-y-auto bg="dark-700" rounded p="4" mb="4">
-    {#each messages as message}
-      {#if message.username && message.type === "speech"}
+    <div flex-grow overflow-y-auto bg="dark-800" rounded p="4" mb="4" h="64">
+    {#each messages as { type, username, message }}
+      {#if username && type === "speech"}
         <div 
           mb="2" 
           p="2" 
           rounded 
-          style="background-color: {formatOKLCH(playerColors.get(message.username))}; color: {playerContrastColors.get(message.username)}"
+          style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
         >
-          <strong>{message.username}:</strong> {message.message}
+          <strong>{username}:</strong> {message}
         </div>
       {:else}
         <div mb="2" italic text="gray-400">
-          <strong>System:</strong> {message.message}
+          <strong>System:</strong> {message}
         </div>
       {/if}
     {/each}
@@ -293,31 +279,32 @@
     {/if}
   </div>
 
-  {#if isPrompted}
-    <div flex="~ gap-2" mb="4">
-      <input 
-        bind:value={newMessage} 
-        placeholder="Type a message" 
-        on:keypress={(e) => e.key === 'Enter' && sendMessage()}
-        bg="dark-700"
-        text="gray-100"
-        border="1 gray-600"
-        rounded
-        p="2"
-        flex-grow
-      />
-      <Button on:click={sendMessage} bg="green-600" hover="bg-green-700">Send</Button>
+    {#if isPrompted}
+      <div flex="~ gap-2" mb="4">
+        <input 
+          bind:value={newMessage} 
+          placeholder="Type a message" 
+          on:keypress={(e) => e.key === 'Enter' && sendMessage()}
+          bg="dark-800"
+          text="gray-100"
+          border="1 gray-700"
+          rounded
+          p="2"
+          flex-grow
+        />
+        <Button on:click={sendMessage}>Send</Button>
+      </div>
+    {/if}
+
+    <div flex="~ wrap gap-2">
+      {#each choices as choice}
+        <Button on:click={() => makeChoice(choice)}>{choice}</Button>
+      {/each}
     </div>
-  {/if}
 
-  <div flex="~ wrap gap-2">
-    {#each choices as choice}
-      <Button on:click={() => makeChoice(choice)} bg="blue-600" hover="bg-blue-700">{choice}</Button>
-    {/each}
-  </div>
-
-  <div flex>
-    <Button on:click={doNothingButton} bg="gray-600" hover="bg-gray-700">Do Nothing</Button>
-    <Button on:click={debugBackButton} bg="purple-600" hover="bg-purple-700">Debug Back</Button>
+    <div flex="~ gap-2" mt="4">
+      <Button on:click={doNothingButton} bg="gray-600" hover="bg-gray-700" text-white>Do Nothing</Button>
+      <Button on:click={debugBackButton} bg="purple-600" hover="bg-purple-700" text-white>Debug Back</Button>
+    </div>
   </div>
 </main>
