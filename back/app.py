@@ -40,6 +40,7 @@ class GameManager:
         self.last_activity: Dict[UserID, float] = {}
 
     async def start(self):
+        await websocket.accept()
         for websocket in self.connections.values():
             await websocket.send_json(
                 GameConnectMessage(
@@ -48,6 +49,23 @@ class GameManager:
             )
         asyncio.create_task(self.game.play_game(), name=f"play_game, {self.game.id}")
         logger.info(f"New game created, {self.game.id}")
+
+    async def resume_game(self, websocket: WebSocket, user_id: UserID):
+        await websocket.accept()
+        self.connections[user_id] = websocket
+
+        await websocket.send_json(
+            GameConnectMessage(
+                message="Reconnected to existing game", gameId=self.game.id
+            ).model_dump()
+        )
+
+        web_human = [
+            player for player in self.game.players if isinstance(player, WebHumanPlayer)
+        ][0]
+        logger.info(f"User {user_id} reconnected, catching up {user_id}")
+        for observation in web_human.observations:
+            await web_human.print(observation)
 
     def has_player(self, user_id: UserID):
         return user_id in [p.name for p in self.players]
@@ -98,22 +116,6 @@ class GameManager:
             )
             self.last_activity[user_id] = time.time()
 
-    async def resume_game(self, websocket: WebSocket, user_id: UserID):
-        self.connections[user_id] = websocket
-
-        await websocket.send_json(
-            GameConnectMessage(
-                message="Reconnected to existing game", gameId=self.game.id
-            ).model_dump()
-        )
-
-        web_human = [
-            player for player in self.game.players if isinstance(player, WebHumanPlayer)
-        ][0]
-        logger.info(f"User {user_id} reconnected, catching up {user_id}")
-        for observation in web_human.observations:
-            await web_human.print(observation)
-
     async def handle_input(self):
         while True:
             for user_id in self.connections.keys():
@@ -152,16 +154,6 @@ class GameManager:
             self.connections.pop(user_id, None)
             logger.info(f"Connection closed for user {user_id}")
 
-    async def cleanup_if_inactive(self):
-        # todo needs to go in a task
-        while True:
-            current_time = time.time()
-            for user_id, last_time in list(self.last_activity.items()):
-                if current_time - last_time > self.GAME_TIMEOUT:
-                    logger.info(f"Cleaning up inactive game for user {user_id}")
-                    await self.end_game(user_id)
-            await asyncio.sleep(60 * 5)  # Check every 5min
-
 
 class ServerState:
     def __init__(self):
@@ -173,9 +165,11 @@ class ServerState:
         )
         game_manager.game.game_manager = game_manager  # gross
 
+        await websocket.accept()
         game_manager.connections[user_id] = websocket
         self.game_id_to_game_manager[game_manager.game.id] = game_manager
         await game_manager.start()
+        return game_manager
 
 
 _server_state = ServerState()
@@ -197,17 +191,22 @@ async def websocket_endpoint(
     user_id: UserID,
     server_state: ServerState = Depends(get_server_state),
 ):
-    await websocket.accept()
-
     logger.info(f"User {user_id} connected")
 
     found_game_with_player = False
     for game_manager in server_state.game_id_to_game_manager.values():
         if game_manager.has_player(user_id):
-            found_game_with_player = True
             await game_manager.resume_game(websocket=websocket, user_id=user_id)
+            found_game_with_player = True
+            break
+
     if not found_game_with_player:
-        await server_state.start_new_game(websocket=websocket, user_id=user_id)
+        # no existing game found
+        game_manager = await server_state.start_new_game(
+            websocket=websocket, user_id=user_id
+        )
+
+    await game_manager.handle_input()
 
 
 if __name__ == "__main__":
