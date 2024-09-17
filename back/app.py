@@ -6,7 +6,7 @@ from loguru import logger
 from typing import Dict
 import time
 
-from message_types import GameConnectMessage, BaseMessage, PromptMessage, BaseEvent
+from message_types import GameConnectMessage, BaseEvent
 from player import WebHumanPlayer
 
 app = FastAPI(debug=True)
@@ -68,7 +68,11 @@ class GameManager:
         connection = self.connections[user_id]
         await connection.send_json(message.model_dump())
 
-    async def receive_message(self, user_id: UserID):
+    async def get_input(self, user_id: UserID, message: BaseEvent):
+        await self.send_message(user_id=user_id, message=message)
+        return await self._receive_message(user_id)
+
+    async def _receive_message(self, user_id: UserID):
         if user_id in self.message_queues:
             return await self.message_queues[user_id].get()
 
@@ -114,12 +118,13 @@ class GameManager:
     #         # Clean up the future if it's still there
     #         await self.input_futures.pop(user_id, None)
     #
-    # async def notify_next_speaker(self, player_name: str):
-    #     for user_id in self.connections:
-    #         await self.connections[user_id].send_json(
-    #             {"type": "next_speaker", "player": player_name}
-    #         )
-    #         self.last_activity[user_id] = time.time()
+    async def notify_next_speaker(self, player_name: str):
+        for user_id in self.connections:
+            await self.connections[user_id].send_json(
+                {"type": "next_speaker", "player": player_name}
+            )
+            self.last_activity[user_id] = time.time()
+
     #
     # async def handle_input(self):
     #     while True:
@@ -173,7 +178,6 @@ class ServerState:
         await game_manager.connect_player(user_id=user_id, websocket=websocket)
 
         self.game_id_to_game_manager[game_manager.game.id] = game_manager
-        await game_manager.start()
         return game_manager
 
 
@@ -184,7 +188,7 @@ def get_server_state():
     return _server_state
 
 
-async def listen_for_player_input(game_manager, websocket, user_id):
+async def listen_for_player_input(game_manager: GameManager, websocket, user_id):
     try:
         while True:
             data = await websocket.receive_json()

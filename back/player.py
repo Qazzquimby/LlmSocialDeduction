@@ -159,11 +159,10 @@ class WebHumanPlayer(HumanPlayer):
         self, prompt: str, should_think=False, params: dict = None
     ) -> str:
         prompt_event = PromptMessage(message=prompt, username="System")
-        return await self.game_manager.get_user_input(self.user_id, prompt_event)
+        return await self.game_manager.get_input(self.user_id, prompt_event)
 
     async def print(self, event: BaseEvent):
-        self.game_manager.send_user_print(self.user_id, event)
-        # await self.game_manager.connections[self.user_id].send_json(event.model_dump())
+        await self.game_manager.send_message(self.user_id, event)
 
 
 def get_rules(roles: List[Role]) -> str:
@@ -294,9 +293,4 @@ class AIPlayer(Player):
 
 
 async def everyone_observe(players: List[Player], event: BaseEvent):
-    # await asyncio.gather(*[player.observe(event) for player in players])
-
-    for player in players:
-        logger.info(f"{player.name} observing: {event}")
-        await player.observe(event)
-        # todo go back to being synchronized once its working. ugh.
+    await asyncio.gather(*[player.observe(event) for player in players])

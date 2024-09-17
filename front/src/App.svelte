@@ -121,7 +121,8 @@
       },
       'game_started': (msg: GameStartedMessage) => {
         gameState = 'Game started';
-        messages = [...messages, { type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}` }];
+        console.log("Clearing previous chat messages")
+        messages = [{ type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}` }];
         players = msg.players;
       },
       'phase': (msg: PhaseMessage) => {
@@ -190,11 +191,6 @@
       connectWebSocket();
     }
   }
-
-  $: gameId && (() => {
-    console.log("gameId changed to ", gameId, "clearing messages")
-    messages = []
-  });
 
   function doNothingButton() {
     console.log("do nothing button pushed")

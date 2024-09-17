@@ -45,15 +45,6 @@ class OneNightWerewolf(Game):
                         game_manager=self.game_manager,
                     )
                 )
-                for player in self.players:
-                    if isinstance(player, WebHumanPlayer):
-                        print("going to observe")
-                        logger.info("Going to observe")
-                        await player.observe(
-                            BaseMessage(type="test", message="testing hello")
-                        )
-                        print("just observed")
-                        logger.info("Just observe")
 
             else:
                 self.players.append(LocalHumanPlayer(game=self, name="Human"))
@@ -138,9 +129,7 @@ class OneNightWerewolf(Game):
             )
 
             for speaker in self.players:
-                from app import notify_next_speaker
-
-                await notify_next_speaker(self.id, speaker.name)
+                await self.game_manager.notify_next_speaker(speaker.name)
                 message = await speaker.speak()
                 await everyone_observe(
                     self.players, SpeechMessage(message=message, username=speaker.name)
