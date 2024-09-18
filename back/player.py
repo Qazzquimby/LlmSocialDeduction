@@ -244,8 +244,7 @@ class AIPlayer(Player):
             prompt = self.think_prompt + prompt
 
         litellm_prompt = litellm_prompt.add_message(prompt, role="system")
-        response = litellm_prompt.run(model=self.model, should_print=False)
-        self.total_cost += litellm_prompt.total_cost
+        response = await self.prompt_model(litellm_prompt)
 
         await self.observe(
             BaseMessage(
@@ -276,8 +275,9 @@ class AIPlayer(Player):
         If the statement contains any errors, explain the errors in the brackets. If not, say '{{No errors found}}.'
         """
 
-        litellm_prompt = Prompt().add_message(prompt, role="system")
-        response = litellm_prompt.run(model=self.model, should_print=False)
+        response = await self.prompt_model(
+            litellm_prompt=Prompt().add_message(prompt, role="system")
+        )
 
         if "No errors found" not in response:
             part_to_share = response.split("{")[-1]
@@ -290,6 +290,11 @@ class AIPlayer(Player):
                     ),
                 )
             )
+
+    async def prompt_model(self, litellm_prompt):
+        response = litellm_prompt.run(model=self.model, should_print=False)
+        self.total_cost += litellm_prompt.total_cost
+        return response
 
 
 async def everyone_observe(players: List[Player], event: BaseEvent):

@@ -153,6 +153,7 @@ async def debug():
 async def websocket_endpoint(
     websocket: WebSocket,
     user_id: UserID,
+    api_key: str = None,
     server_state: ServerState = Depends(get_server_state),
 ):
     logger.info(f"User {user_id} connected")
@@ -171,13 +172,14 @@ async def websocket_endpoint(
     if not found_game_with_player:
         # no existing game found
         game_manager = await server_state.start_new_game(
-            websocket=websocket, user_id=user_id
+            websocket=websocket, user_id=user_id, api_key=api_key
         )
         listen_task = listen_for_player_input(
             game_manager=game_manager, websocket=websocket, user_id=user_id
         )
         run_game_task = asyncio.create_task(
-            game_manager.game.play_game(), name=f"play_game, {game_manager.game.id}"
+            game_manager.game.play_game(api_key=api_key, is_dev=is_dev),
+            name=f"play_game, {game_manager.game.id}",
         )
         await asyncio.gather(listen_task, run_game_task)
 

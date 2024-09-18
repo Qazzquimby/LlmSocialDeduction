@@ -37,6 +37,7 @@
 
     let players: string[] = [];
     let apiKey: string | null = null;
+    let isDev: boolean = false; // Add this line to control dev mode
 
     async function sha256CodeChallenge(input: string) {
         const encoder = new TextEncoder();
@@ -91,6 +92,7 @@
             if (codeVerifier) {
                 try {
                     apiKey = await exchangeCodeForKey(code, codeVerifier);
+                    localStorage.setItem('apiKey', apiKey); // Store the API key
                     localStorage.removeItem('code_verifier');
                     // Remove the code from the URL
                     window.history.replaceState({}, document.title, window.location.pathname);
@@ -98,6 +100,9 @@
                     console.error('Error exchanging code for API key:', error);
                 }
             }
+        } else {
+            // Check if we have a stored API key
+            apiKey = localStorage.getItem('apiKey');
         }
 
         if (username) {
@@ -113,7 +118,7 @@
 
     function connectWebSocket() {
         console.log('Trying connection');
-        ws = new WebSocket(`ws://localhost:8000/ws/${username}`);
+        ws = new WebSocket(`ws://localhost:8000/ws/${username}?apiKey=${apiKey}&isDev=${isDev}`);
 
         ws.onopen = () => {
             isConnected = true;

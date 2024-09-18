@@ -4,10 +4,17 @@ from pathlib import Path
 import litellm
 from litellm import completion, completion_cost
 
+IS_DEV = False
+
 litellm.modify_params = True
-os.environ["OPENAI_API_KEY"] = Path("openai_key.txt").read_text().strip()
-os.environ["ANTHROPIC_API_KEY"] = Path("anthropic_key.txt").read_text().strip()
-os.environ["OPENROUTER_API_KEY"] = Path("openrouter_key.txt").read_text().strip()
+
+# Load dev keys
+dev_keys = {
+    "OPENAI_API_KEY": Path("openai_key.txt").read_text().strip(),
+    "ANTHROPIC_API_KEY": Path("anthropic_key.txt").read_text().strip(),
+    "OPENROUTER_API_KEY": Path("openrouter_key.txt").read_text().strip(),
+}
+
 
 class Prompt:
     def __init__(self):
@@ -23,8 +30,14 @@ class Prompt:
         self.messages.append({"role": role, "content": message})
         return self
 
-    def run(self, model, should_print=True) -> str:
+    def run(self, model, should_print=True, api_key=None) -> str:
         try:
+            # Use the provided API key or dev key based on the is_dev flag
+            if IS_DEV:
+                os.environ["OPENROUTER_API_KEY"] = dev_keys["OPENROUTER_API_KEY"]
+            elif api_key:
+                os.environ["OPENROUTER_API_KEY"] = api_key
+
             response = completion(
                 model=model,
                 messages=self.messages,
