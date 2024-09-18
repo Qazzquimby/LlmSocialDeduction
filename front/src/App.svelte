@@ -1,6 +1,6 @@
 <script lang="ts">
-    import {onMount} from 'svelte';
-    import {Button} from "$lib/components/ui/button";
+    import { onMount } from 'svelte';
+    import { Button } from "$lib/components/ui/button";
     import type {
         BaseMessage,
         GameConnectMessage,
@@ -36,11 +36,80 @@
     let currentSpeaker: string | null = null;
 
     let players: string[] = [];
-    let isLoggedIn = false;
+    let apiKey: string | null = null;
 
-    function login() {
-        // TODO
+    async function sha256CodeChallenge(input: string) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(input);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return btoa(String.fromCharCode(...new Uint8Array(hash)))
+            .replace(/=/g, '')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_');
     }
+
+    async function login() {
+        const codeVerifier = crypto.randomUUID();
+        const codeChallenge = await sha256CodeChallenge(codeVerifier);
+        const callbackUrl = encodeURIComponent(window.location.origin);
+        const authUrl = `https://openrouter.ai/auth?callback_url=${callbackUrl}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+        
+        // Store code_verifier in localStorage (you might want to use a more secure method in production)
+        localStorage.setItem('code_verifier', codeVerifier);
+        
+        // Redirect to OpenRouter auth page
+        window.location.href = authUrl;
+    }
+
+    async function exchangeCodeForKey(code: string, codeVerifier: string) {
+        const response = await fetch('https://openrouter.ai/api/v1/auth/keys', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                code,
+                code_verifier: codeVerifier,
+                code_challenge_method: 'S256',
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to exchange code for API key');
+        }
+
+        const data = await response.json();
+        return data.key;
+    }
+
+    onMount(async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+            const codeVerifier = localStorage.getItem('code_verifier');
+            if (codeVerifier) {
+                try {
+                    apiKey = await exchangeCodeForKey(code, codeVerifier);
+                    localStorage.removeItem('code_verifier');
+                    // Remove the code from the URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch (error) {
+                    console.error('Error exchanging code for API key:', error);
+                }
+            }
+        }
+
+        if (username) {
+            connectWebSocket();
+        }
+        return () => {
+            if (ws) {
+                console.log("Closing websocket")
+                ws.close();
+            }
+        };
+    });
 
     function connectWebSocket() {
         console.log('Trying connection');
@@ -229,7 +298,7 @@
     <div max-w-3xl p-4 w-full>
         <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue>One Night Ultimate Werewolf</h1>
 
-        {#if !isLoggedIn}
+        {#if !apiKey}
             <Button on:click={login}>Login with OpenRouter</Button>
         {:else}
             <div mb-4 flex gap-2 items-center justify-between>
