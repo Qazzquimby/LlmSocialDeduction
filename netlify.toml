@@ -1,6 +1,8 @@
 # Default build settings for Netlify
 [build]
-  # Directory to publish (relative to root of your repo)
+  # Base directory where the frontend code is located
+  base = "front"
+  # Directory to publish (relative to base)
   publish = "dist"
   # Default build command
   command = "npm run build"
@@ -14,3 +16,6 @@
 [dev]
   # Local dev command. A.k.a npm start
   command = "npm run dev"
+  # Specify the directory for the dev command
+  targetPort = 5173
+  publish = "front/dist"
