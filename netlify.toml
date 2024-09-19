@@ -1,0 +1,16 @@
+# Default build settings for Netlify
+[build]
+  # Directory to publish (relative to root of your repo)
+  publish = "dist"
+  # Default build command
+  command = "npm run build"
+
+# Redirects and headers are optional
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  # Local dev command. A.k.a npm start
+  command = "npm run dev"
