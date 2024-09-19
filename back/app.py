@@ -8,6 +8,7 @@ import time
 
 from message_types import GameConnectMessage, BaseEvent
 from player import WebHumanPlayer
+from websocket_login import UserLogin
 
 app = FastAPI(debug=True)
 
@@ -112,13 +113,13 @@ class ServerState:
     def __init__(self):
         self.game_id_to_game_manager: Dict[GameID, GameManager] = {}
 
-    async def start_new_game(self, websocket: WebSocket, user_id: UserID):
+    async def start_new_game(self, websocket: WebSocket, login: UserLogin):
         game_manager = GameManager(
-            OneNightWerewolf(num_players=5, has_human=True, user_id=user_id)
+            OneNightWerewolf(num_players=5, has_human=True, login=login)
         )
         game_manager.game.game_manager = game_manager  # gross
 
-        await game_manager.connect_player(user_id=user_id, websocket=websocket)
+        await game_manager.connect_player(user_id=login.name, websocket=websocket)
 
         self.game_id_to_game_manager[game_manager.game.id] = game_manager
         return game_manager
@@ -172,13 +173,13 @@ async def websocket_endpoint(
     if not found_game_with_player:
         # no existing game found
         game_manager = await server_state.start_new_game(
-            websocket=websocket, user_id=user_id, api_key=api_key
+            websocket=websocket, login=UserLogin(name=user_id, api_key=api_key)
         )
         listen_task = listen_for_player_input(
             game_manager=game_manager, websocket=websocket, user_id=user_id
         )
         run_game_task = asyncio.create_task(
-            game_manager.game.play_game(api_key=api_key, is_dev=is_dev),
+            game_manager.game.play_game(),
             name=f"play_game, {game_manager.game.id}",
         )
         await asyncio.gather(listen_task, run_game_task)

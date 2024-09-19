@@ -2,7 +2,7 @@ from loguru import logger
 
 import asyncio
 import random
-from typing import List
+from typing import List, Tuple
 import time
 
 from ai_models import get_random_model
@@ -12,20 +12,22 @@ from message_types import (
     PhaseMessage,
     SpeechMessage,
     PlayerActionMessage,
-    BaseMessage,
 )
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
+from websocket_login import UserLogin
 from .onuw_roles import get_roles_in_game, assign_roles
 
 from base_game import Game
 
 
 class OneNightWerewolf(Game):
-    def __init__(self, num_players: int, has_human: bool = False, user_id: str = None):
+    def __init__(
+        self, num_players: int, has_human: bool = False, login: UserLogin = None
+    ):
         super().__init__(num_players, has_human)
-        self.user_id = user_id
+        self.login = login
         self.current_phase = "setup"
         self.current_action = None
         self.last_action_time = time.time()
@@ -36,12 +38,11 @@ class OneNightWerewolf(Game):
         logger.info("Setting up game")
         if self.has_human:
             num_ai = self.num_players - 1
-            if self.user_id:
+            if self.login:
                 self.players.append(
                     WebHumanPlayer(
                         game=self,
-                        name="Human",
-                        user_id=self.user_id,
+                        login=self.login,
                         game_manager=self.game_manager,
                     )
                 )
@@ -59,7 +60,11 @@ class OneNightWerewolf(Game):
 
             model = get_random_model()
             player = AIPlayer(
-                game=self, name=name, model=model, personality=personality
+                game=self,
+                name=name,
+                model=model,
+                personality=personality,
+                api_key=self.get_key(),
             )
             self.players.append(player)
 
@@ -213,6 +218,12 @@ class OneNightWerewolf(Game):
                 total_cost += player.total_cost
         print(f"Total cost: {total_cost:.2f} USD")
         print("\n--- Game Over ---")
+
+    def get_key(self):
+        """Returns the key of a random player. Intended to fairly distribute costs to present players."""
+        web_player = random.choice(self.game_manager.web_players)
+        key = web_player.login.api_key
+        return key
 
 
 if __name__ == "__main__":

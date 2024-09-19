@@ -2,8 +2,6 @@ import asyncio
 import random
 from typing import Optional, TYPE_CHECKING
 
-from loguru import logger
-
 from message_types import (
     BaseEvent,
     BaseMessage,
@@ -15,6 +13,8 @@ from core import Prompt
 from roles import Role
 
 from aioconsole import ainput
+
+from websocket_login import UserLogin
 
 if TYPE_CHECKING:
     from game_state import GameState
@@ -150,19 +150,19 @@ from message_types import PromptMessage
 
 
 class WebHumanPlayer(HumanPlayer):
-    def __init__(self, game, name: str, user_id: str, game_manager):
-        super().__init__(game, name)
-        self.user_id = user_id
+    def __init__(self, game, login: UserLogin, game_manager):
+        super().__init__(game, login.name)
+        self.login = login
         self.game_manager = game_manager
 
     async def prompt_with(
         self, prompt: str, should_think=False, params: dict = None
     ) -> str:
         prompt_event = PromptMessage(message=prompt, username="System")
-        return await self.game_manager.get_input(self.user_id, prompt_event)
+        return await self.game_manager.get_input(self.login.name, prompt_event)
 
     async def print(self, event: BaseEvent):
-        await self.game_manager.send_message(self.user_id, event)
+        await self.game_manager.send_message(self.login.name, event)
 
 
 def get_rules(roles: List[Role]) -> str:
@@ -188,9 +188,10 @@ def get_rules(roles: List[Role]) -> str:
 
 
 class AIPlayer(Player):
-    def __init__(self, game, name: str, model, personality: str = None):
+    def __init__(self, game, name: str, model, api_key: str, personality: str = None):
         super().__init__(game, name)
         self.model = model
+        self.api_key = api_key
         self.personality = personality
 
         self.total_cost = 0
@@ -291,8 +292,10 @@ class AIPlayer(Player):
                 )
             )
 
-    async def prompt_model(self, litellm_prompt):
-        response = litellm_prompt.run(model=self.model, should_print=False)
+    async def prompt_model(self, litellm_prompt: Prompt):
+        response = litellm_prompt.run(
+            model=self.model, api_key=self.api_key, should_print=False
+        )
         self.total_cost += litellm_prompt.total_cost
         return response
 
