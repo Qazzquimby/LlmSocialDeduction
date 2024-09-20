@@ -4,16 +4,23 @@ from pathlib import Path
 import litellm
 from litellm import completion, completion_cost
 
-IS_DEV = False
-
 litellm.modify_params = True
 
-# Load dev keys
-dev_keys = {
-    "OPENAI_API_KEY": Path("openai_key.txt").read_text().strip(),
-    "ANTHROPIC_API_KEY": Path("anthropic_key.txt").read_text().strip(),
-    "OPENROUTER_API_KEY": Path("openrouter_key.txt").read_text().strip(),
-}
+# Load API keys from environment variables or dev files
+def get_api_key(key_name):
+    env_key = os.environ.get(key_name)
+    if env_key:
+        return env_key
+    
+    key_file = Path(f"{key_name.lower()}.txt")
+    if key_file.exists():
+        return key_file.read_text().strip()
+    
+    return None
+
+OPENAI_API_KEY = get_api_key("OPENAI_API_KEY")
+ANTHROPIC_API_KEY = get_api_key("ANTHROPIC_API_KEY")
+OPENROUTER_API_KEY = get_api_key("OPENROUTER_API_KEY")
 
 
 class Prompt:
@@ -32,10 +39,8 @@ class Prompt:
 
     def run(self, model, should_print=True, api_key=None) -> str:
         try:
-            # Use the provided API key or dev key based on the is_dev flag
-            if IS_DEV:
-                os.environ["OPENROUTER_API_KEY"] = dev_keys["OPENROUTER_API_KEY"]
-            elif api_key:
+            # Use the provided API key or the one from the environment
+            if api_key:
                 os.environ["OPENROUTER_API_KEY"] = api_key
 
             response = completion(

@@ -2,7 +2,7 @@ from loguru import logger
 
 import asyncio
 import random
-from typing import List, Tuple
+from typing import List
 import time
 
 from ai_models import get_random_model
@@ -39,16 +39,15 @@ class OneNightWerewolf(Game):
         if self.has_human:
             num_ai = self.num_players - 1
             if self.login:
-                self.players.append(
+                self.state.add_player(
                     WebHumanPlayer(
                         game=self,
                         login=self.login,
                         game_manager=self.game_manager,
                     )
                 )
-
             else:
-                self.players.append(LocalHumanPlayer(game=self, name="Human"))
+                self.state.add_player(LocalHumanPlayer(game=self, name="Human"))
         else:
             num_ai = self.num_players
 
@@ -66,58 +65,61 @@ class OneNightWerewolf(Game):
                 personality=personality,
                 api_key=self.get_key(),
             )
-            self.players.append(player)
+            self.state.add_player(player)
 
-        random.shuffle(self.players)
+        random.shuffle(self.state.players)
 
         await everyone_observe(
-            self.players,
+            self.state.players,
             GameStartedMessage(
-                message=f"The players in this game are: {', '.join([p.name for p in self.players])}.",
-                players=[p.name for p in self.players],
+                message=f"The players in this game are: {', '.join([p.name for p in self.state.players])}.",
+                players=[p.name for p in self.state.players],
             ),
         )
 
         # Assign roles
-        roles_in_game = get_roles_in_game(len(self.players))
-        center_cards = await assign_roles(self.players, roles_in_game=roles_in_game)
-        self.game_state.role_pool = roles_in_game
+        roles_in_game = get_roles_in_game(len(self.state.players))
+        center_cards = await assign_roles(
+            self.state.players, roles_in_game=roles_in_game
+        )
+        self.state.role_pool = roles_in_game
         await everyone_observe(
-            self.players,
+            self.state.players,
             ObservationMessage(
                 message=f"The full role pool in this game are: {', '.join([role.name for role in roles_in_game])}. Remember that 3 of them are in the center, not owned by other players."
             ),
         )
-        self.game_state.add_center_cards(center_cards)
-        self.game_state.set_players(self.players)
+        self.state.add_center_cards(center_cards)
 
-        for player in self.players:
+        for player in self.state.players:
             await player.observe(
                 ObservationMessage(
-                    message=f"Your role's strategy: {player.role.get_strategy(self.game_state)}\n"
+                    message=f"Your role's strategy: {player.role.get_strategy(self.state)}\n"
                 )
             )
 
     async def play_night_phase(self) -> None:
         logger.info("Starting night phase")
         await everyone_observe(
-            self.players, PhaseMessage(message="Night phase begins.", phase="night")
+            self.state.players,
+            PhaseMessage(message="Night phase begins.", phase="night"),
         )
 
         night_roles = sorted(
-            [role for role in self.game_state.role_pool if role.wake_order < 100],
+            [role for role in self.state.role_pool if role.wake_order < 100],
             key=lambda r: r.wake_order,
         )
         night_roles = list(dict.fromkeys(night_roles))  # ordered dedup
         for role in night_roles:
-            for player in [p for p in self.players if p.original_role == role]:
-                action = await player.night_action(self.game_state)
+            for player in [p for p in self.state.players if p.original_role == role]:
+                action = await player.night_action(self.state)
                 if action:
-                    self.game_state.record_night_action(player, action)
+                    self.state.record_night_action(player, action)
 
     async def play_day_phase(self) -> None:
         await everyone_observe(
-            self.players, PhaseMessage(message="Day phase begins", phase="day")
+            self.state.players,
+            PhaseMessage(message="Day phase begins", phase="day"),
         )
 
         num_rounds = 3
@@ -129,25 +131,29 @@ class OneNightWerewolf(Game):
                 conversation_round_message += " (FINAL CHANCE TO TALK)"
 
             await everyone_observe(
-                self.players, ObservationMessage(message=conversation_round_message)
+                self.state.players,
+                ObservationMessage(message=conversation_round_message),
             )
 
-            for speaker in self.players:
+            for speaker in self.state.players:
                 await self.game_manager.notify_next_speaker(speaker.name)
                 message = await speaker.speak()
                 await everyone_observe(
-                    self.players, SpeechMessage(message=message, username=speaker.name)
+                    self.state.players,
+                    SpeechMessage(message=message, username=speaker.name),
                 )
 
     async def voting_phase(self) -> List[Player]:
         await everyone_observe(
-            self.players,
+            self.state.players,
             PhaseMessage(message="Beginning of voting phase", phase="voting"),
         )
 
         votes = {}
-        for player in self.players:
-            voted_player = await player.vote([p for p in self.players if p != player])
+        for player in self.state.players:
+            voted_player = await player.vote(
+                [p for p in self.state.players if p != player]
+            )
             votes[player] = voted_player
 
         for player, voted_player in votes.items():
@@ -162,7 +168,7 @@ class OneNightWerewolf(Game):
 
         for executed_player in executed_players:
             await everyone_observe(
-                self.players,
+                self.state.players,
                 PlayerActionMessage(
                     message=f"\n{executed_player.name} has been executed!",
                     player=executed_player.name,
@@ -173,24 +179,26 @@ class OneNightWerewolf(Game):
         return executed_players
 
     async def check_win_condition(self, executed_players: List[Player]) -> None:
-        werewolves_exist = any(p for p in self.players if p.role.name == "Werewolf")
+        werewolves_exist = any(
+            p for p in self.state.players if p.role.name == "Werewolf"
+        )
         winners = [
             p
-            for p in self.players
+            for p in self.state.players
             if p.role.did_win(p, executed_players, werewolves_exist)
         ]
 
         for winner in winners:
             await everyone_observe(
-                self.players,
+                self.state.players,
                 PlayerActionMessage(
                     message=f"{winner} wins!", player=winner.name, action="win"
                 ),
             )
 
-        for player in self.players:
+        for player in self.state.players:
             await everyone_observe(
-                self.players,
+                self.state.players,
                 PlayerActionMessage(
                     message=f"{player.name} was {player.role.name}.",
                     player=player.name,
@@ -198,7 +206,7 @@ class OneNightWerewolf(Game):
                 ),
             )
 
-        for player in self.players:
+        for player in self.state.players:
             if isinstance(player, AIPlayer):
                 performance_tracker.update_performance(
                     player, did_win=player in winners
@@ -213,7 +221,7 @@ class OneNightWerewolf(Game):
         await self.check_win_condition(executed_players)
 
         total_cost = 0
-        for player in self.players:
+        for player in self.state.players:
             if isinstance(player, AIPlayer):
                 total_cost += player.total_cost
         print(f"Total cost: {total_cost:.2f} USD")
@@ -221,11 +229,17 @@ class OneNightWerewolf(Game):
 
     def get_key(self):
         """Returns the key of a random player. Intended to fairly distribute costs to present players."""
-        web_player = random.choice(self.game_manager.web_players)
-        key = web_player.login.api_key
-        return key
+        if self.game_manager.web_players:
+            web_player = random.choice(self.game_manager.web_players)
+            key = web_player.login.api_key
+            return key
+        else:
+            return None
 
 
 if __name__ == "__main__":
-    game = OneNightWerewolf(num_players=5, has_human=True)
-    asyncio.run(game.play_game())
+    from app import GameManager
+
+    game_manager = GameManager(OneNightWerewolf(num_players=5, has_human=True))
+    game_manager.game.game_manager = game_manager  # todo, gross.
+    asyncio.run(game_manager.game.play_game())

@@ -187,11 +187,22 @@ def get_rules(roles: List[Role]) -> str:
     return rules
 
 
+from typing import Optional
+import os
+
+
 class AIPlayer(Player):
-    def __init__(self, game, name: str, model, api_key: str, personality: str = None):
+    def __init__(
+        self,
+        game,
+        name: str,
+        model,
+        api_key: Optional[str] = None,
+        personality: str = None,
+    ):
         super().__init__(game, name)
         self.model = model
-        self.api_key = api_key
+        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         self.personality = personality
 
         self.total_cost = 0
@@ -205,6 +216,8 @@ class AIPlayer(Player):
                 Should your strategy change given new information?
                 
                 Then answer the following question in the correct {} format:\n"""
+
+        self.use_mock_api = os.environ.get("USE_MOCK_API", "false").lower() == "true"
 
     async def speak(self) -> str:
         prompt = ""
@@ -227,7 +240,7 @@ class AIPlayer(Player):
             role="system",
         )
 
-        rules = get_rules(self.game.game_state.role_pool)
+        rules = get_rules(self.game.state.role_pool)
 
         litellm_prompt.add_message(rules, role="system")
 
@@ -260,7 +273,7 @@ class AIPlayer(Player):
         return response
 
     async def check_rules(self, message: str) -> None:
-        rules = get_rules(self.game.game_state.role_pool)
+        rules = get_rules(self.game.state.role_pool)
         prompt = f"""
         You are a Rules Genie for a social deduction game. 
         Your job is to check if a player's statement contains rules errors or faulty reasoning. 
@@ -293,11 +306,18 @@ class AIPlayer(Player):
             )
 
     async def prompt_model(self, litellm_prompt: Prompt):
+        if self.use_mock_api:
+            return self.mock_api_response(litellm_prompt)
+
         response = litellm_prompt.run(
             model=self.model, api_key=self.api_key, should_print=False
         )
         self.total_cost += litellm_prompt.total_cost
         return response
+
+    def mock_api_response(self, litellm_prompt: Prompt) -> str:
+        # This is a simple mock response. You can expand this to provide more realistic responses for testing.
+        return f"Mock response for {self.name} using {self.model}"
 
 
 async def everyone_observe(players: List[Player], event: BaseEvent):

@@ -9,8 +9,7 @@ class Game:
     def __init__(self, num_players: int, has_human: bool = False):
         self.num_players: int = num_players
         self.has_human: bool = has_human
-        self.players: List[Player] = []
-        self.game_state: GameState = GameState()
+        self.state: GameState = GameState(num_players)
 
         self.id = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 

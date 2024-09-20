@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
+from fastapi import FastAPI, WebSocket, Depends
 from starlette.middleware.cors import CORSMiddleware
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 import asyncio
@@ -6,15 +6,15 @@ from loguru import logger
 from typing import Dict
 import time
 
-from message_types import GameConnectMessage, BaseEvent
+from message_types import BaseEvent
 from player import WebHumanPlayer
 from websocket_login import UserLogin
+from websocket_manager import websocket_manager
 
 app = FastAPI(debug=True)
 
 # Configure loguru
 logger.add("app.log", rotation="500 MB", level="DEBUG")
-
 
 # Enable CORS
 app.add_middleware(
@@ -35,91 +35,51 @@ class GameManager:
     def __init__(self, game: OneNightWerewolf):
         self.game: OneNightWerewolf = game
         self.game_over = False
-
-        self.connections: Dict[UserID, WebSocket] = {}
-        self.input_futures: Dict[UserID, asyncio.Future] = {}
         self.last_activity: Dict[UserID, float] = {}
-        self.message_queues: Dict[UserID, asyncio.Queue] = {}
-
-    async def resume_game(self, websocket: WebSocket, user_id: UserID):
-        await self.connect_player(user_id=user_id, websocket=websocket)
-        await websocket.send_json(
-            GameConnectMessage(
-                message="Reconnected to existing game", gameId=self.game.id
-            ).model_dump()
-        )
-
-        web_human = [
-            player for player in self.game.players if isinstance(player, WebHumanPlayer)
-        ][0]
-        logger.info(f"User {user_id} reconnected, catching up {user_id}")
-        for observation in web_human.observations:
-            await web_human.print(observation)
-
-    async def connect_player(self, user_id: UserID, websocket: WebSocket):
-        await websocket.accept()
-        self.connections[user_id] = websocket
-        self.message_queues[user_id] = asyncio.Queue()
 
     def disconnect(self, user_id: UserID):
-        self.connections.pop(user_id, None)
-        self.message_queues.pop(user_id, None)
-
-    async def send_message(self, user_id: UserID, message: BaseEvent):
-        connection = self.connections[user_id]
-        await connection.send_json(message.model_dump())
-
-    async def get_input(self, user_id: UserID, message: BaseEvent):
-        await self.send_message(user_id=user_id, message=message)
-        message = await self._receive_message(user_id)
-        return message
-
-    async def _receive_message(self, user_id: UserID):
-        if user_id in self.message_queues:
-            message_dict = await self.message_queues[user_id].get()
-            message = message_dict["message"]
-            return message
+        self.last_activity.pop(user_id, None)
 
     def has_player(self, user_id: UserID):
         return user_id in [p.user_id for p in self.web_players]
 
     @property
     def players(self):
-        return self.game.game_state.players
+        return self.game.state.players
 
     @property
     def web_players(self):
         return [p for p in self.players if isinstance(p, WebHumanPlayer)]
 
+    def get_web_human_player(self, user_id: UserID):
+        return next((p for p in self.web_players if p.user_id == user_id), None)
+
     async def end_game(self, user_id: UserID):
-        if user_id in self.connections:
-            await self.connections[user_id].send_json(
-                {"type": "game_ended", "message": "Game ended due to inactivity"}
-            )
-            await self.connections[user_id].close()
-            del self.connections[user_id]
+        await websocket_manager.send_personal_message(
+            BaseEvent(type="game_ended", message="Game ended due to inactivity"),
+            user_id,
+        )
         self.game_over = True
         logger.info(f"Game ended due to inactive {user_id}")
 
     async def notify_next_speaker(self, player_name: str):
-        for user_id in self.connections:
-            await self.connections[user_id].send_json(
-                {"type": "next_speaker", "player": player_name}
-            )
-            self.last_activity[user_id] = time.time()
+        await websocket_manager.broadcast(
+            BaseEvent(type="next_speaker", player=player_name),
+            [p.user_id for p in self.web_players],
+        )
+        for user_id in self.web_players:
+            self.last_activity[user_id.user_id] = time.time()
 
 
 class ServerState:
     def __init__(self):
         self.game_id_to_game_manager: Dict[GameID, GameManager] = {}
 
-    async def start_new_game(self, websocket: WebSocket, login: UserLogin):
+    async def start_new_game(self, login: UserLogin):
         game_manager = GameManager(
             OneNightWerewolf(num_players=5, has_human=True, login=login)
         )
-        game_manager.game.game_manager = game_manager  # gross
-
-        await game_manager.connect_player(user_id=login.name, websocket=websocket)
+        game_manager.game.game_manager = game_manager  # todo, gross.
 
         self.game_id_to_game_manager[game_manager.game.id] = game_manager
         return game_manager
@@ -130,18 +90,6 @@ _server_state = ServerState()
 
 def get_server_state():
     return _server_state
-
-
-async def listen_for_player_input(game_manager: GameManager, websocket, user_id):
-    try:
-        while True:
-            data = await websocket.receive_json()
-            await game_manager.message_queues[user_id].put(data)
-    except WebSocketDisconnect:
-        game_manager.disconnect(user_id)
-    except Exception as e:
-        logger.error(f"Error in WebSocket handler for user {user_id}: {str(e)}")
-        raise
 
 
 @app.get("/debug")
@@ -162,27 +110,25 @@ async def websocket_endpoint(
     found_game_with_player = False
     for game_manager in server_state.game_id_to_game_manager.values():
         if game_manager.has_player(user_id):
-            await game_manager.resume_game(websocket=websocket, user_id=user_id)
-            found_game_with_player = True
-
-            await listen_for_player_input(
-                game_manager=game_manager, websocket=websocket, user_id=user_id
+            await websocket_manager.resume_game(
+                user_id, game_manager.game.id, game_manager
             )
-            return
+            found_game_with_player = True
+            break
 
     if not found_game_with_player:
-        # no existing game found
         game_manager = await server_state.start_new_game(
-            websocket=websocket, login=UserLogin(name=user_id, api_key=api_key)
+            login=UserLogin(name=user_id, api_key=api_key)
         )
-        listen_task = listen_for_player_input(
-            game_manager=game_manager, websocket=websocket, user_id=user_id
-        )
+
+    await websocket_manager.handle_connection(websocket, user_id, game_manager)
+
+    if not found_game_with_player:
         run_game_task = asyncio.create_task(
             game_manager.game.play_game(),
             name=f"play_game, {game_manager.game.id}",
         )
-        await asyncio.gather(listen_task, run_game_task)
+        await run_game_task
 
 
 if __name__ == "__main__":
