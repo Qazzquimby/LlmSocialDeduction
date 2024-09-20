@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { Button } from "$lib/components/ui/button";
+    import {onMount} from 'svelte';
+    import {Button} from "$lib/components/ui/button";
     import type {
         BaseMessage,
         GameConnectMessage,
@@ -12,18 +12,7 @@
         BaseEvent
     } from '$lib/types';
 
-    let messages: BaseMessage[] = [
-        {
-            type: "phase",
-            message: "This is an important announcement",
-            username: "System"
-        },
-        {
-            type: "speech",
-            message: "Blah",
-            username: "Ricky"
-        }
-    ];
+    let messages: BaseMessage[] = [];
     let newMessage = '';
     let username = '';
     let ws: WebSocket;
@@ -37,7 +26,9 @@
 
     let players: string[] = [];
     let apiKey: string | null = null;
-    let isDev: boolean = false; // Add this line to control dev mode
+
+    const serverRoot = import.meta.env.SERVER_ROOT;
+
 
     async function sha256CodeChallenge(input: string) {
         const encoder = new TextEncoder();
@@ -54,10 +45,10 @@
         const codeChallenge = await sha256CodeChallenge(codeVerifier);
         const callbackUrl = encodeURIComponent(window.location.origin);
         const authUrl = `https://openrouter.ai/auth?callback_url=${callbackUrl}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
-        
+
         // Store code_verifier in localStorage (you might want to use a more secure method in production)
         localStorage.setItem('code_verifier', codeVerifier);
-        
+
         // Redirect to OpenRouter auth page
         window.location.href = authUrl;
     }
@@ -86,7 +77,7 @@
     onMount(async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        
+
         if (code) {
             const codeVerifier = localStorage.getItem('code_verifier');
             if (codeVerifier) {
@@ -118,7 +109,7 @@
 
     function connectWebSocket() {
         console.log('Trying connection');
-        ws = new WebSocket(`ws://localhost:8000/ws/${username}?apiKey=${apiKey}&isDev=${isDev}`);
+        ws = new WebSocket(`ws://${serverRoot}/ws/${username}?apiKey=${apiKey}`);
 
         ws.onopen = () => {
             isConnected = true;
@@ -300,11 +291,18 @@
 </script>
 
 <main bg-dark-900 text-gray-100 min-h-screen flex-col p-4 items-center font-sans>
-    <div max-w-3xl p-4 w-full>
+    <div max-w-3xl p-4 w-full mx-auto>
         <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue>One Night Ultimate Werewolf</h1>
 
         {#if !apiKey}
-            <Button on:click={login}>Login with OpenRouter</Button>
+            <div >
+                <p>A WIP engine for social deduction games with LLMs.</p>
+                <p>Right now only One Night Ultimate Werewolf is set up.</p>
+                <p mt-1rem>Running LLMs costs money so to play you have to link an OpenRouter account with an api key. You can
+                    set a small limit on the key.</p>
+
+                <Button style="width:100%" on:click={login}>Login with OpenRouter</Button>
+            </div>
         {:else}
             <div mb-4 flex gap-2 items-center justify-between>
                 <div flex gap-2 items-center>
@@ -389,9 +387,9 @@
             </div>
 
         {/if}
-        <div flex gap-2 mt-4>
-            <Button on:click={doNothingButton}>Do Nothing</Button>
-            <Button on:click={debugBackButton}>Debug Back</Button>
-        </div>
+        <!--        <div flex gap-2 mt-4>-->
+        <!--            <Button on:click={doNothingButton}>Do Nothing</Button>-->
+        <!--            <Button on:click={debugBackButton}>Debug Back</Button>-->
+        <!--        </div>-->
     </div>
 </main>
