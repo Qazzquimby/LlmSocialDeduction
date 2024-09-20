@@ -27,7 +27,8 @@
     let players: string[] = [];
     let apiKey: string | null = null;
 
-    const serverRoot = import.meta.env.SERVER_ROOT;
+    const serverRoot = import.meta.env.VITE_SERVER_ROOT;
+    console.log("server root at ", serverRoot)
 
 
     async function sha256CodeChallenge(input: string) {
@@ -109,7 +110,7 @@
 
     function connectWebSocket() {
         console.log('Trying connection');
-        ws = new WebSocket(`ws://${serverRoot}/ws/${username}?apiKey=${apiKey}`);
+        ws = new WebSocket(`${serverRoot}/ws/${username}?apiKey=${apiKey}`);
 
         ws.onopen = () => {
             isConnected = true;
