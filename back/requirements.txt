@@ -1,0 +1,8 @@
+fastapi==0.114.2
+loguru==0.7.2
+pydantic==2.9.2
+litellm==1.46.8
+uvicorn==0.30.6
+starlette==0.38.4
+websockets==13.0
+aioconsole
