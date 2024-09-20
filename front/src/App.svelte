@@ -110,7 +110,7 @@
 
     function connectWebSocket() {
         console.log('Trying connection');
-        ws = new WebSocket(`${serverRoot}/ws/${username}?apiKey=${apiKey}`);
+        ws = new WebSocket(`${serverRoot}/ws/${username}?api_key=${apiKey}`);
 
         ws.onopen = () => {
             isConnected = true;

@@ -6,6 +6,7 @@ from typing import List, Tuple
 import time
 
 from ai_models import get_random_model
+from games.one_night_ultimate_werewolf.onuw_roles import get_roles_in_game, assign_roles
 from message_types import (
     ObservationMessage,
     GameStartedMessage,
@@ -17,7 +18,6 @@ from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
 from websocket_login import UserLogin
-from .onuw_roles import get_roles_in_game, assign_roles
 
 from base_game import Game
 
