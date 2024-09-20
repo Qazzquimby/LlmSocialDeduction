@@ -292,7 +292,9 @@
 
 <main bg-dark-900 text-gray-100 min-h-screen flex-col p-4 items-center font-sans>
     <div max-w-3xl p-4 w-full mx-auto>
-        <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue>One Night Ultimate Werewolf</h1>
+        <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue font-mono>
+            <span text-gray-400>t r</span> <span>a i</span> <span text-gray-400>t o r</span>
+        </h1>
 
         {#if !apiKey}
             <div >
