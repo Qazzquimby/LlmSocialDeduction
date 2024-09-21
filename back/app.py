@@ -97,14 +97,16 @@ async def debug():
     return
 
 
-@app.websocket("/ws/{user_id}")
+@app.websocket("/ws/{name}")
 async def websocket_endpoint(
     websocket: WebSocket,
-    user_id: UserID,
+    name: str,
     api_key: str = None,
     server_state: ServerState = Depends(get_server_state),
 ):
-    logger.info(f"User {user_id} connected")
+    user_login = UserLogin(name=name, api_key=api_key)
+    user_id = user_login.user_id
+    logger.info(f"User {name} (ID: {user_id}) connected")
 
     found_game_with_player = False
     for game_manager in server_state.game_id_to_game_manager.values():
@@ -116,9 +118,7 @@ async def websocket_endpoint(
             break
 
     if not found_game_with_player:
-        game_manager = await server_state.start_new_game(
-            login=UserLogin(name=user_id, api_key=api_key)
-        )
+        game_manager = await server_state.start_new_game(login=user_login)
 
     await websocket_manager.handle_connection(websocket, user_id, game_manager)
 

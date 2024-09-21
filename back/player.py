@@ -154,15 +154,16 @@ class WebHumanPlayer(HumanPlayer):
         super().__init__(game, login.name)
         self.login = login
         self.game_manager = game_manager
+        self.user_id = login.user_id
 
     async def prompt_with(
         self, prompt: str, should_think=False, params: dict = None
     ) -> str:
         prompt_event = PromptMessage(message=prompt, username="System")
-        return await self.game_manager.get_input(self.login.name, prompt_event)
+        return await self.game_manager.get_input(self.user_id, prompt_event)
 
     async def print(self, event: BaseEvent):
-        await self.game_manager.send_message(self.login.name, event)
+        await self.game_manager.send_message(self.user_id, event)
 
 
 def get_rules(roles: List[Role]) -> str:

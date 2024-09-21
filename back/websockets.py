@@ -3,6 +3,7 @@ from typing import Dict, List
 import asyncio
 
 from pydantic import BaseModel
+import hashlib
 
 from message_types import BaseEvent, GameConnectMessage
 
@@ -10,6 +11,10 @@ from message_types import BaseEvent, GameConnectMessage
 class UserLogin(BaseModel):
     name: str
     api_key: str
+
+    @property
+    def user_id(self) -> str:
+        return hashlib.sha256(self.api_key.encode()).hexdigest()[:16]
 
 
 class WebSocketManager:

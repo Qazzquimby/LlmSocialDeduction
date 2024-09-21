@@ -39,13 +39,12 @@ class OneNightWerewolf(Game):
         if self.has_human:
             num_ai = self.num_players - 1
             if self.login:
-                self.state.add_player(
-                    WebHumanPlayer(
-                        game=self,
-                        login=self.login,
-                        game_manager=self.game_manager,
-                    )
+                web_human_player = WebHumanPlayer(
+                    game=self,
+                    login=self.login,
+                    game_manager=self.game_manager,
                 )
+                self.state.add_player(web_human_player)
             else:
                 self.state.add_player(LocalHumanPlayer(game=self, name="Human"))
         else:
@@ -229,7 +228,7 @@ class OneNightWerewolf(Game):
 
     def get_key(self):
         """Returns the key of a random player. Intended to fairly distribute costs to present players."""
-        if self.game_manager.web_players:
+        if self.game_manager and hasattr(self.game_manager, 'web_players') and self.game_manager.web_players:
             web_player = random.choice(self.game_manager.web_players)
             key = web_player.login.api_key
             return key
