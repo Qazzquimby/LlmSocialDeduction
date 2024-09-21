@@ -7,7 +7,7 @@ from typing import Dict
 
 from message_types import BaseMessage, NextSpeakerMessage
 from player import WebHumanPlayer
-from websockets import websocket_manager, UserLogin
+from websocket_management import websocket_manager, UserLogin
 
 app = FastAPI(debug=True)
 

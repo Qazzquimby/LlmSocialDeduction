@@ -2,7 +2,7 @@ import pytest
 
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 from player import AIPlayer
-from websockets import UserLogin
+from websocket_management import UserLogin
 
 
 @pytest.fixture

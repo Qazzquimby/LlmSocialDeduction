@@ -14,7 +14,7 @@ from roles import Role
 
 from aioconsole import ainput
 
-from websockets import UserLogin
+from websocket_management import UserLogin
 
 if TYPE_CHECKING:
     from game_state import GameState
@@ -148,7 +148,7 @@ class LocalHumanPlayer(HumanPlayer):
 
 import time
 from message_types import PromptMessage
-from websockets import websocket_manager
+from websocket_management import websocket_manager
 
 
 class WebHumanPlayer(HumanPlayer):
