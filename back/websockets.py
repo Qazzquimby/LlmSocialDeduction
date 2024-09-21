@@ -5,7 +5,7 @@ import asyncio
 from pydantic import BaseModel
 import hashlib
 
-from message_types import BaseEvent, GameConnectMessage
+from message_types import BaseEvent, GameConnectMessage, PromptMessage
 
 
 class UserLogin(BaseModel):
@@ -21,15 +21,18 @@ class WebSocketManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
         self.message_queues: Dict[str, asyncio.Queue] = {}
+        self.input_queues: Dict[str, asyncio.Queue] = {}
 
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
         self.active_connections[user_id] = websocket
         self.message_queues[user_id] = asyncio.Queue()
+        self.input_queues[user_id] = asyncio.Queue()
 
     def disconnect(self, user_id: str):
         self.active_connections.pop(user_id, None)
         self.message_queues.pop(user_id, None)
+        self.input_queues.pop(user_id, None)
 
     async def send_personal_message(self, message: BaseEvent, user_id: str):
         if user_id in self.active_connections:
@@ -43,25 +46,30 @@ class WebSocketManager:
         if user_id in self.message_queues:
             return await self.message_queues[user_id].get()
 
-    async def handle_connection(self, websocket: WebSocket, user_id: str, game_manager):
+    async def get_input(self, user_id: str, prompt: PromptMessage):
+        await self.send_personal_message(prompt, user_id)
+        return await self.input_queues[user_id].get()
+
+    async def handle_connection(self, websocket: WebSocket, user_id: str):
         await self.connect(websocket, user_id)
         try:
             while True:
                 data = await websocket.receive_json()
-                await self.message_queues[user_id].put(data)
+                if isinstance(data, dict) and data.get("type") == "input":
+                    await self.input_queues[user_id].put(data["message"])
+                else:
+                    await self.message_queues[user_id].put(data)
         except WebSocketDisconnect:
             self.disconnect(user_id)
-            game_manager.disconnect(user_id)
 
-    async def resume_game(self, user_id: str, game_id: str, game_manager):
+    async def resume_game(self, user_id: str, game_id: str, web_human_player):
         await self.send_personal_message(
             GameConnectMessage(message="Reconnected to existing game", gameId=game_id),
             user_id,
         )
 
-        web_human = game_manager.get_web_human_player(user_id)
-        if web_human:
-            for observation in web_human.observations:
+        if web_human_player:
+            for observation in web_human_player.observations:
                 await self.send_personal_message(observation, user_id)
 
 

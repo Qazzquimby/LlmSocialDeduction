@@ -32,8 +32,6 @@ class OneNightWerewolf(Game):
         self.current_action = None
         self.last_action_time = time.time()
 
-        self.game_manager = None
-
     async def setup_game(self) -> None:
         logger.info("Setting up game")
         if self.has_human:
@@ -42,7 +40,6 @@ class OneNightWerewolf(Game):
                 web_human_player = WebHumanPlayer(
                     game=self,
                     login=self.login,
-                    game_manager=self.game_manager,
                 )
                 self.state.add_player(web_human_player)
             else:

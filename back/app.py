@@ -34,10 +34,6 @@ class GameManager:
     def __init__(self, game: OneNightWerewolf):
         self.game: OneNightWerewolf = game
         self.game_over = False
-        self.last_activity: Dict[UserID, float] = {}
-
-    def disconnect(self, user_id: UserID):
-        self.last_activity.pop(user_id, None)
 
     def has_player(self, user_id: UserID):
         return user_id in [p.user_id for p in self.web_players]
@@ -53,21 +49,22 @@ class GameManager:
     def get_web_human_player(self, user_id: UserID):
         return next((p for p in self.web_players if p.user_id == user_id), None)
 
-    async def end_game(self, user_id: UserID):
-        await websocket_manager.send_personal_message(
-            BaseMessage(type="game_ended", message="Game ended due to inactivity"),
-            user_id,
-        )
+    async def end_game(self):
+        for player in self.web_players:
+            await websocket_manager.send_personal_message(
+                BaseMessage(type="game_ended", message="Game ended due to inactivity"),
+                player.user_id,
+            )
         self.game_over = True
-        logger.info(f"Game ended due to inactive {user_id}")
+        logger.info("Game ended due to inactivity")
 
     async def notify_next_speaker(self, player_name: str):
         await websocket_manager.broadcast(
             NextSpeakerMessage(type="next_speaker", player=player_name),
-            [p.login.name for p in self.web_players],
+            [p.user_id for p in self.web_players],
         )
-        for user_id in self.web_players:
-            self.last_activity[user_id.user_id] = time.time()
+        for player in self.web_players:
+            player.update_activity()
 
 
 class ServerState:
@@ -75,12 +72,9 @@ class ServerState:
         self.game_id_to_game_manager: Dict[GameID, GameManager] = {}
 
     async def start_new_game(self, login: UserLogin):
-        game_manager = GameManager(
-            OneNightWerewolf(num_players=5, has_human=True, login=login)
-        )
-        game_manager.game.game_manager = game_manager  # todo, gross.
-
-        self.game_id_to_game_manager[game_manager.game.id] = game_manager
+        game = OneNightWerewolf(num_players=5, has_human=True, login=login)
+        game_manager = GameManager(game)
+        self.game_id_to_game_manager[game.id] = game_manager
         return game_manager
 
 
@@ -111,8 +105,9 @@ async def websocket_endpoint(
     found_game_with_player = False
     for game_manager in server_state.game_id_to_game_manager.values():
         if game_manager.has_player(user_id):
+            web_human_player = game_manager.get_web_human_player(user_id)
             await websocket_manager.resume_game(
-                user_id, game_manager.game.id, game_manager
+                user_id, game_manager.game.id, web_human_player
             )
             found_game_with_player = True
             break
@@ -120,7 +115,7 @@ async def websocket_endpoint(
     if not found_game_with_player:
         game_manager = await server_state.start_new_game(login=user_login)
 
-    await websocket_manager.handle_connection(websocket, user_id, game_manager)
+    await websocket_manager.handle_connection(websocket, user_id)
 
     if not found_game_with_player:
         run_game_task = asyncio.create_task(
