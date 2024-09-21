@@ -6,17 +6,19 @@ from litellm import completion, completion_cost
 
 litellm.modify_params = True
 
+
 # Load API keys from environment variables or dev files
 def get_api_key(key_name):
     env_key = os.environ.get(key_name)
     if env_key:
         return env_key
-    
+
     key_file = Path(f"{key_name.lower()}.txt")
     if key_file.exists():
         return key_file.read_text().strip()
-    
+
     return None
+
 
 OPENAI_API_KEY = get_api_key("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = get_api_key("ANTHROPIC_API_KEY")

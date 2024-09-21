@@ -17,6 +17,7 @@ from message_types import (
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
+from message_types import BaseMessage
 from websockets import UserLogin
 
 from base_game import Game
@@ -132,7 +133,10 @@ class OneNightWerewolf(Game):
             )
 
             for speaker in self.state.players:
-                await self.game_manager.notify_next_speaker(speaker.name)
+                await everyone_observe(
+                    self.state.players,
+                    BaseMessage(type="next_speaker", message=f"It's {speaker.name}'s turn to speak.")
+                )
                 message = await speaker.speak()
                 await everyone_observe(
                     self.state.players,
@@ -225,12 +229,11 @@ class OneNightWerewolf(Game):
 
     def get_key(self):
         """Returns the key of a random player. Intended to fairly distribute costs to present players."""
-        if self.game_manager and hasattr(self.game_manager, 'web_players') and self.game_manager.web_players:
-            web_player = random.choice(self.game_manager.web_players)
-            key = web_player.login.api_key
-            return key
-        else:
-            return None
+        web_players = [player for player in self.state.players if isinstance(player, WebHumanPlayer)]
+        if web_players:
+            web_player = random.choice(web_players)
+            return web_player.login.api_key
+        return None
 
 
 if __name__ == "__main__":
