@@ -59,7 +59,7 @@ class Prompt:
                     num_retries=2,
                 )
             except Exception as e:
-                return "(No response)"
+                return f"(No response) {e}"
         response_text = response["choices"][0]["message"]["content"]
         self.add_message(response_text, role="assistant")
         if should_print:

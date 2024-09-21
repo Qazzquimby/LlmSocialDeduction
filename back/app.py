@@ -4,9 +4,8 @@ from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 import asyncio
 from loguru import logger
 from typing import Dict
-import time
 
-from message_types import BaseEvent, BaseMessage, NextSpeakerMessage
+from message_types import BaseMessage, NextSpeakerMessage
 from player import WebHumanPlayer
 from websockets import websocket_manager, UserLogin
 
