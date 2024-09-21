@@ -14,7 +14,7 @@ from roles import Role
 
 from aioconsole import ainput
 
-from websocket_login import UserLogin
+from websockets import UserLogin
 
 if TYPE_CHECKING:
     from game_state import GameState

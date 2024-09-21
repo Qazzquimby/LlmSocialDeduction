@@ -6,10 +6,9 @@ from loguru import logger
 from typing import Dict
 import time
 
-from message_types import BaseEvent
+from message_types import BaseEvent, BaseMessage, NextSpeakerMessage
 from player import WebHumanPlayer
-from websocket_login import UserLogin
-from websocket_manager import websocket_manager
+from websockets import websocket_manager, UserLogin
 
 app = FastAPI(debug=True)
 
@@ -56,7 +55,7 @@ class GameManager:
 
     async def end_game(self, user_id: UserID):
         await websocket_manager.send_personal_message(
-            BaseEvent(type="game_ended", message="Game ended due to inactivity"),
+            BaseMessage(type="game_ended", message="Game ended due to inactivity"),
             user_id,
         )
         self.game_over = True
@@ -64,8 +63,8 @@ class GameManager:
 
     async def notify_next_speaker(self, player_name: str):
         await websocket_manager.broadcast(
-            BaseEvent(type="next_speaker", player=player_name),
-            [p.user_id for p in self.web_players],
+            NextSpeakerMessage(type="next_speaker", player=player_name),
+            [p.login.name for p in self.web_players],
         )
         for user_id in self.web_players:
             self.last_activity[user_id.user_id] = time.time()

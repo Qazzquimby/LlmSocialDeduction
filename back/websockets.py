@@ -1,9 +1,16 @@
 from fastapi import WebSocket, WebSocketDisconnect
 from typing import Dict, List
 import asyncio
+
+from pydantic import BaseModel
+
 from message_types import BaseEvent, GameConnectMessage
-from player import WebHumanPlayer
-from websocket_login import UserLogin
+
+
+class UserLogin(BaseModel):
+    name: str
+    api_key: str
+
 
 class WebSocketManager:
     def __init__(self):
@@ -44,12 +51,13 @@ class WebSocketManager:
     async def resume_game(self, user_id: str, game_id: str, game_manager):
         await self.send_personal_message(
             GameConnectMessage(message="Reconnected to existing game", gameId=game_id),
-            user_id
+            user_id,
         )
 
         web_human = game_manager.get_web_human_player(user_id)
         if web_human:
             for observation in web_human.observations:
                 await self.send_personal_message(observation, user_id)
+
 
 websocket_manager = WebSocketManager()

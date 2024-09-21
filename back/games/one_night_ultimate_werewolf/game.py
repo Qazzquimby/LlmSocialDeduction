@@ -17,7 +17,7 @@ from message_types import (
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
 from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
-from websocket_login import UserLogin
+from websockets import UserLogin
 
 from base_game import Game
 
