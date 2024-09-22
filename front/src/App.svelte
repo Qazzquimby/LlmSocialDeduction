@@ -272,8 +272,8 @@
                         <h2 text-xl font-bold mb-2>One Night Ultimate Werewolf</h2>
                         <p text-gray-400>A single round of night actions, talking, and voting.</p>
                     </div>
-                    <div px-auto>
-                        <Button class="px-2rem py-1rem bg-blue" on:click={connectWebSocket}>Start Game</Button>
+                    <div mx-1rem flex-grow flex items-center>
+                        <Button class="w-full px-2rem py-1rem bg-blue" on:click={connectWebSocket}>Start Game</Button>
                     </div>
                 </div>
             </div>
