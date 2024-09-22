@@ -37,6 +37,8 @@ class WebSocketManager:
     async def send_personal_message(self, message: BaseEvent, user_id: str):
         if user_id in self.active_connections:
             await self.active_connections[user_id].send_json(message.model_dump())
+        else:
+            raise ValueError(f"User {user_id} not connected")
 
     async def broadcast(self, message: BaseEvent, users: List[str]):
         for user_id in users:
@@ -50,8 +52,7 @@ class WebSocketManager:
         await self.send_personal_message(prompt, user_id)
         return await self.input_queues[user_id].get()
 
-    async def handle_connection(self, websocket: WebSocket, user_id: str):
-        await self.connect(websocket, user_id)
+    async def listen_on_connection(self, websocket: WebSocket, user_id: str):
         try:
             while True:
                 data = await websocket.receive_json()
