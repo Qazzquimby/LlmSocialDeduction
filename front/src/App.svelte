@@ -111,7 +111,7 @@
 
     function connectWebSocket() {
         console.log('Trying connection');
-        const url = gameId 
+        const url = gameId
             ? `${serverRoot}/ws/${username}?api_key=${apiKey}&game_id=${gameId}`
             : `${serverRoot}/ws/${username}?api_key=${apiKey}`;
         ws = new WebSocket(url);
@@ -300,8 +300,8 @@
 
 </script>
 
-<main bg-dark-900 text-gray-100 min-h-screen flex-col p-4 items-center font-sans>
-    <div max-w-3xl p-4 w-full mx-auto>
+<main   bg-dark-900 text-gray-100 min-h-screen  font-sans >
+    <div h-100vh max-w-3xl p-4 w-full mx-auto flex="~ col" items-center>
         <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue font-mono>
             <span text-gray-400>t r</span> <span>a i</span> <span text-gray-400>t o r</span>
         </h1>
@@ -331,63 +331,68 @@
                         {/if}
                     {:else}
                         <span text-red-400>Disconnected</span>
+                        {#if gameId}
+                            <span>from {gameId}</span>
+                        {/if}
                     {/if}
                 </div>
 
 
             </div>
             {#if gameId}
-                <div mb-4>
-                    {#if gameState}
-                        <p bg-dark-800 p-2 rounded text-lg capitalize>{gameState}</p>
-                    {/if}
-                </div>
+                <div w-full flex="~ col" flex-grow>
+                    <div mb-4>
+                        {#if gameState}
+                            <p bg-dark-800 p-2 rounded text-lg capitalize>{gameState}</p>
+                        {/if}
+                    </div>
 
-                <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4 h-64>
-                    {#each messages as {type, username, message}}
-                        {#if username && type === "speech"}
-                            <div
-                                    mb-2
-                                    p-2
-                                    rounded
-                                    style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
-                            >
-                                <strong>{username}:</strong> {message}
-                            </div>
-                        {:else}
-                            <div mb-2 italic text-gray-400>
-                                {message}
+                    <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4 min-h-64>
+                        {#each messages as {type, username, message}}
+                            {#if username && type === "speech"}
+                                <div
+                                        mb-2
+                                        p-2
+                                        rounded
+                                        style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
+                                >
+                                    <strong>{username}:</strong> {message}
+                                </div>
+                            {:else}
+                                <div mb-2 italic text-gray-400>
+                                    {message}
+                                </div>
+                            {/if}
+                        {/each}
+                        {#if currentSpeaker}
+                            <div mt-2 italic text-gray-400>
+                                {currentSpeaker} is thinking...
                             </div>
                         {/if}
-                    {/each}
-                    {#if currentSpeaker}
-                        <div mt-2 italic text-gray-400>
-                            {currentSpeaker} is thinking...
+                    </div>
+
+                    {#if isPrompted}
+                        <div flex gap-2 mb-4>
+                            <input
+                                    bind:value={newMessage}
+                                    placeholder="Type a message"
+                                    on:keypress={(e) => e.key === 'Enter' && sendMessage()}
+                                    bg-dark-800
+                                    text-gray-100
+                                    border-gray-700
+                                    rounded
+                                    p-2
+                                    flex-grow
+                            />
+                            <Button on:click={sendMessage}>Send</Button>
                         </div>
                     {/if}
-                </div>
 
-                {#if isPrompted}
-                    <div flex gap-2 mb-4>
-                        <input
-                                bind:value={newMessage}
-                                placeholder="Type a message"
-                                on:keypress={(e) => e.key === 'Enter' && sendMessage()}
-                                bg-dark-800
-                                text-gray-100
-                                border-gray-700
-                                rounded
-                                p-2
-                                flex-grow
-                        />
-                        <Button on:click={sendMessage}>Send</Button>
+                    <div flex flex-wrap gap-2>
+                        {#each choices as choice}
+                            <Button on:click={() => makeChoice(choice)}>{choice}</Button>
+                        {/each}
                     </div>
-                {/if}
-
-                <div flex flex-wrap gap-2>
-                    {#each choices as choice}
-                        <Button on:click={() => makeChoice(choice)}>{choice}</Button>
-                    {/each}
                 </div>
 
             {:else}
