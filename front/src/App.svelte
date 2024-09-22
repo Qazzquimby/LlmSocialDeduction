@@ -134,9 +134,6 @@
     }
 
     onMount(() => {
-        if (username) {
-            connectWebSocket();
-        }
         return () => {
             if (ws) {
                 console.log("Closing websocket")
