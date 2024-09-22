@@ -2,6 +2,8 @@ import asyncio
 import random
 from typing import Optional, TYPE_CHECKING
 
+from loguru import logger
+
 from message_types import (
     BaseEvent,
     BaseMessage,
@@ -161,10 +163,12 @@ class WebHumanPlayer(HumanPlayer):
     async def prompt_with(
         self, prompt: str, should_think=False, params: dict = None
     ) -> str:
+        logger.info(f"prompting {self.login.name} with {prompt[:20]}")
         prompt_event = PromptMessage(message=prompt, username="System")
         return await websocket_manager.get_input(self.user_id, prompt_event)
 
     async def print(self, event: BaseEvent):
+        logger.info(f"informing {self.login.name} with {event}")
         await websocket_manager.send_personal_message(event, self.user_id)
 
     def update_activity(self):

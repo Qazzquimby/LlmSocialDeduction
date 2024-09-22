@@ -2,6 +2,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from typing import Dict, List
 import asyncio
 
+from loguru import logger
 from pydantic import BaseModel
 import hashlib
 
@@ -36,9 +37,12 @@ class WebSocketManager:
 
     async def send_personal_message(self, message: BaseEvent, user_id: str):
         if user_id in self.active_connections:
-            await self.active_connections[user_id].send_json(message.model_dump())
+            try:
+                await self.active_connections[user_id].send_json(message.model_dump())
+            except RuntimeError as e:
+                raise RuntimeError(f"User {user_id} unexpectedly disconnected", e)
         else:
-            raise ValueError(f"User {user_id} not connected")
+            raise RuntimeError(f"User {user_id} not connected")
 
     async def broadcast(self, message: BaseEvent, users: List[str]):
         for user_id in users:
@@ -53,6 +57,7 @@ class WebSocketManager:
         return await self.input_queues[user_id].get()
 
     async def listen_on_connection(self, websocket: WebSocket, user_id: str):
+        logger.info(f"listening to {user_id}")
         try:
             while True:
                 data = await websocket.receive_json()
@@ -62,6 +67,8 @@ class WebSocketManager:
                     await self.message_queues[user_id].put(data)
         except WebSocketDisconnect:
             self.disconnect(user_id)
+        finally:
+            logger.info(f"done listening to {user_id}")
 
     async def resume_game(self, user_id: str, game_id: str, web_human_player):
         await self.send_personal_message(

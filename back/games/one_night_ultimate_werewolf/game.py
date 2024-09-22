@@ -217,18 +217,21 @@ class OneNightWerewolf(Game):
         performance_tracker.save_performance_data()
 
     async def play_game(self) -> None:
-        await self.setup_game()
-        await self.play_night_phase()
-        await self.play_day_phase()
-        executed_players = await self.voting_phase()
-        await self.check_win_condition(executed_players)
+        try:
+            await self.setup_game()
+            await self.play_night_phase()
+            await self.play_day_phase()
+            executed_players = await self.voting_phase()
+            await self.check_win_condition(executed_players)
 
-        total_cost = 0
-        for player in self.state.players:
-            if isinstance(player, AIPlayer):
-                total_cost += player.total_cost
-        print(f"Total cost: {total_cost:.2f} USD")
-        print("\n--- Game Over ---")
+            total_cost = 0
+            for player in self.state.players:
+                if isinstance(player, AIPlayer):
+                    total_cost += player.total_cost
+            print(f"Total cost: {total_cost:.2f} USD")
+            print("\n--- Game Over ---")
+        finally:
+            logger.info(f"Game {id} ended")
 
     def get_key(self):
         """Returns the key of a random player. Intended to fairly distribute costs to present players."""
