@@ -20,7 +20,7 @@
     let choices: string[] = [];
     let numPlayers = 5;
     let isConnected = false;
-    let gameId: string | null = null;
+    let gameId: string | null = localStorage.getItem('gameId');
     let isPrompted = false;
     let currentSpeaker: string | null = null;
 
@@ -96,6 +96,11 @@
             apiKey = localStorage.getItem('apiKey');
         }
 
+        // If we have a gameId, reconnect to the game
+        if (gameId) {
+            connectWebSocket();
+        }
+
         return () => {
             if (ws) {
                 console.log("Closing websocket")
@@ -106,7 +111,10 @@
 
     function connectWebSocket() {
         console.log('Trying connection');
-        ws = new WebSocket(`${serverRoot}/ws/${username}?api_key=${apiKey}`);
+        const url = gameId 
+            ? `${serverRoot}/ws/${username}?api_key=${apiKey}&game_id=${gameId}`
+            : `${serverRoot}/ws/${username}?api_key=${apiKey}`;
+        ws = new WebSocket(url);
 
         ws.onopen = () => {
             isConnected = true;
@@ -197,6 +205,7 @@
             "game_connect": (msg: GameConnectMessage) => {
                 isConnected = true;
                 gameId = msg.gameId;
+                localStorage.setItem('gameId', gameId);
             },
             'game_started': (msg: GameStartedMessage) => {
                 gameState = 'Game started';
@@ -268,6 +277,27 @@
             .catch(error => console.error(error));
     }
 
+    function leaveGame() {
+        if (ws && isConnected) {
+            const message = {
+                type: 'player_action',
+                player: username,
+                action: 'leave_game'
+            };
+            ws.send(JSON.stringify(message));
+        }
+        gameId = null;
+        localStorage.removeItem('gameId');
+        isConnected = false;
+        messages = [];
+        gameState = null;
+        choices = [];
+        players = [];
+        if (ws) {
+            ws.close();
+        }
+    }
+
 </script>
 
 <main bg-dark-900 text-gray-100 min-h-screen flex-col p-4 items-center font-sans>
@@ -297,6 +327,7 @@
                         <span text-green-400>Connected</span>
                         {#if gameId}
                             <span>to {gameId}</span>
+                            <Button on:click={leaveGame}>Leave Game</Button>
                         {/if}
                     {:else}
                         <span text-red-400>Disconnected</span>
