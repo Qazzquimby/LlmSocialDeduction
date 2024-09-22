@@ -253,19 +253,23 @@
                 <Button style="width:100%" on:click={login}>Login with OpenRouter</Button>
             </div>
         {:else}
-            {#if isConnected}
-                <span text-green-400>Connected</span>
-                {#if gameId}
-                    <span>to {gameId}</span>
-                {/if}
-            {:else}
-                <span text-red-400>Disconnected</span>
-                {#if gameId}
-                    <span>from {gameId}</span>
-                {/if}
-            {/if}
+            <div ml-auto flex="~ col" items-end>
+                <Button on:click={login}>Log out</Button>
 
-            <Button style="margin-left: auto; display:block;" on:click={login}>Log out</Button>
+                <div>
+                    <span>Server: </span>
+                    {#if isConnected}
+                        <span text-green-400>Connected</span>
+                        {#if gameId}
+                            <span>to {gameId}</span>
+                        {/if}
+                    {:else}
+                        <span text-red-400>Disconnected</span>
+                    {/if}
+                </div>
+
+
+            </div>
             <div flex="~ col" mt-4rem>
                 <div class="game-card" bg-dark-800 p-4 rounded-lg mb-4 flex="~ wrap" items-center>
                     <div min-w-12rem max-w-24rem>
