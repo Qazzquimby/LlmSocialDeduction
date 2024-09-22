@@ -10,7 +10,7 @@
 </script>
 
 <ButtonPrimitive.Root
-	class="bg-dark-700 hover:bg-dark-600 text-gray-100 px-4 py-2 rounded transition-colors duration-200 {className}"
+	class="bg-dark-700 hover:bg-dark-300 text-gray-100 px-4 py-2 rounded transition-colors duration-200 {className}"
 	type="button"
 	{...$$restProps}
 	on:click

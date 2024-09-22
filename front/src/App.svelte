@@ -14,7 +14,7 @@
 
     let messages: BaseMessage[] = [];
     let newMessage = '';
-    let username = '';
+    let username = 'Human';
     let ws: WebSocket;
     let gameState: string | null = null;
     let choices: string[] = [];
@@ -29,7 +29,6 @@
 
     const serverRoot = import.meta.env.VITE_SERVER_ROOT;
     console.log("server root at ", serverRoot)
-
 
     async function sha256CodeChallenge(input: string) {
         const encoder = new TextEncoder();
@@ -97,9 +96,6 @@
             apiKey = localStorage.getItem('apiKey');
         }
 
-        if (username) {
-            connectWebSocket();
-        }
         return () => {
             if (ws) {
                 console.log("Closing websocket")
@@ -238,57 +234,6 @@
         }
     }
 
-    function newGame() {
-        if (isConnected) {
-            ws.send(JSON.stringify({type: 'new_game', num_players: numPlayers}));
-        } else {
-            console.error('WebSocket is not connected');
-        }
-    }
-
-    function sendMessage() {
-        if (newMessage.trim() && isConnected) {
-            const message = {
-                type: 'player_action',
-                player: username,
-                action: 'speak',
-                message: newMessage
-            };
-            console.log("sending ", message)
-            ws.send(JSON.stringify(message));
-            newMessage = '';
-            isPrompted = false;
-        }
-    }
-
-    function makeChoice(choice: string) {
-        if (isConnected) {
-            const message = {
-                type: 'player_action',
-                player: username,
-                action: choice
-            };
-            ws.send(JSON.stringify(message));
-        }
-    }
-
-    function handleUsernameInput() {
-        if (username && !isConnected) {
-            connectWebSocket();
-        }
-    }
-
-    function doNothingButton() {
-        console.log("do nothing button pushed")
-    }
-
-    function debugBackButton() {
-        fetch("http://localhost:8000/debug")
-            .then(response => response.text())
-            .then(data => console.log(data))
-            .catch(error => console.error(error));
-    }
-
 </script>
 
 <main bg-dark-900 text-gray-100 min-h-screen flex-col p-4 items-center font-sans>
@@ -298,42 +243,39 @@
         </h1>
 
         {#if !apiKey}
-            <div >
+            <div>
                 <p>A WIP engine for social deduction games with LLMs.</p>
                 <p>Right now only One Night Ultimate Werewolf is set up.</p>
-                <p mt-1rem>Running LLMs costs money so to play you have to link an OpenRouter account with an api key. You can
-                    set a small limit on the key.</p>
+                <p mt-1rem>
+                    Running LLMs costs money so to play you have to link an OpenRouter account with an api key.
+                    You can set a small limit on the key.</p>
 
                 <Button style="width:100%" on:click={login}>Login with OpenRouter</Button>
             </div>
         {:else}
-            <div mb-4 flex gap-2 items-center justify-between>
-                <div flex gap-2 items-center>
-                    <input
-                            bind:value={username}
-                            placeholder="Username"
-                            on:change={handleUsernameInput}
-                            bg-dark-800
-                            text-gray-100
-                            border-gray-700
-                            rounded
-                            p-2
-                            w-40
-                    />
-                    {#if isConnected}
-                        <span text-green-400>Connected</span>
-                        {#if gameId}
-                            <span>to {gameId}</span>
-                        {/if}
-                    {:else}
-                        <span text-red-400>Disconnected</span>
-                        {#if gameId}
-                            <span>from {gameId}</span>
-                        {/if}
-                    {/if}
+            {#if isConnected}
+                <span text-green-400>Connected</span>
+                {#if gameId}
+                    <span>to {gameId}</span>
+                {/if}
+            {:else}
+                <span text-red-400>Disconnected</span>
+                {#if gameId}
+                    <span>from {gameId}</span>
+                {/if}
+            {/if}
+
+            <Button style="margin-left: auto; display:block;" on:click={login}>Log out</Button>
+            <div flex="~ col" mt-4rem>
+                <div class="game-card" bg-dark-800 p-4 rounded-lg mb-4 flex="~ wrap" items-center>
+                    <div min-w-12rem max-w-24rem>
+                        <h2 text-xl font-bold mb-2>One Night Ultimate Werewolf</h2>
+                        <p text-gray-400>A single round of night actions, talking, and voting.</p>
+                    </div>
+                    <div px-auto>
+                        <Button class="px-2rem py-1rem bg-blue" on:click={connectWebSocket}>Start Game</Button>
+                    </div>
                 </div>
-
-
             </div>
 
             <div mb-4>
@@ -396,3 +338,15 @@
         <!--        </div>-->
     </div>
 </main>
+
+<style>
+    .game-card {
+        border: 1px solid #4a5568;
+        transition: all 0.3s ease;
+    }
+
+    .game-card:hover {
+        transform: scale(1.01);
+        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+</style>
