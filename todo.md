@@ -10,12 +10,6 @@ buttons.
 
 Todo:
 
-- Right now a lot of code in game_manager (and elsewhere?) is using user_id. The user is now
-  identified by a UserLogin which should probably give players a unique id based on their openrouter
-  auth. Maybe a hash of the api key? Maybe that could be a property of userLogin? Contradict me if
-  this is insecure.
 - There's no proper testing. Any calls to apis should be avoidable with minimal code changes.
-- game_manager owns game and game owns game_manager. Yuck. Simplify how the game logic can reach the
-  websockets
 - websocket management is spread out between app and webplayer. Maybe it could mostly be moved to
   webapi player?
