@@ -11,6 +11,7 @@
         NextSpeakerMessage,
         BaseEvent
     } from '$lib/types';
+    import { toast } from "svelte-sonner";
 
     let messages: BaseMessage[] = [];
     let newMessage = '';
@@ -21,6 +22,7 @@
     let numPlayers = 5;
     let isConnected = false;
     let gameId: string | null = localStorage.getItem('gameId');
+    let prevGameId: string | null = null;
     let isPrompted = false;
     let currentSpeaker: string | null = null;
 
@@ -296,6 +298,12 @@
         if (ws) {
             ws.close();
         }
+    }
+
+    $: if (gameId && prevGameId && gameId !== prevGameId) {
+        console.log(`gameId changed from ${prevGameId} to ${gameId}`);
+        toast(`Previous game shut down. Making a new game.`, {duration: 5000});
+        prevGameId = gameId;
     }
 
 </script>
