@@ -243,6 +243,7 @@
         </h1>
 
         {#if !apiKey}
+            <!--is logged out-->
             <div>
                 <p>A WIP engine for social deduction games with LLMs.</p>
                 <p>Right now only One Night Ultimate Werewolf is set up.</p>
@@ -282,58 +283,60 @@
                 </div>
             </div>
 
-            <div mb-4>
-                {#if gameState}
-                    <p bg-dark-800 p-2 rounded text-lg>Current game state: {gameState}</p>
-                {/if}
-            </div>
+            {#if gameId}
+                <div mb-4>
+                    {#if gameState}
+                        <p bg-dark-800 p-2 rounded text-lg>Current game state: {gameState}</p>
+                    {/if}
+                </div>
 
-            <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4 h-64>
-                {#each messages as {type, username, message}}
-                    {#if username && type === "speech"}
-                        <div
-                                mb-2
-                                p-2
-                                rounded
-                                style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
-                        >
-                            <strong>{username}:</strong> {message}
-                        </div>
-                    {:else}
-                        <div mb-2 italic text-gray-400>
-                            <strong>System:</strong> {message}
+                <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4 h-64>
+                    {#each messages as {type, username, message}}
+                        {#if username && type === "speech"}
+                            <div
+                                    mb-2
+                                    p-2
+                                    rounded
+                                    style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
+                            >
+                                <strong>{username}:</strong> {message}
+                            </div>
+                        {:else}
+                            <div mb-2 italic text-gray-400>
+                                <strong>System:</strong> {message}
+                            </div>
+                        {/if}
+                    {/each}
+                    {#if currentSpeaker}
+                        <div mt-2 italic text-gray-400>
+                            {currentSpeaker} is thinking...
                         </div>
                     {/if}
-                {/each}
-                {#if currentSpeaker}
-                    <div mt-2 italic text-gray-400>
-                        {currentSpeaker} is thinking...
+                </div>
+
+                {#if isPrompted}
+                    <div flex gap-2 mb-4>
+                        <input
+                                bind:value={newMessage}
+                                placeholder="Type a message"
+                                on:keypress={(e) => e.key === 'Enter' && sendMessage()}
+                                bg-dark-800
+                                text-gray-100
+                                border-gray-700
+                                rounded
+                                p-2
+                                flex-grow
+                        />
+                        <Button on:click={sendMessage}>Send</Button>
                     </div>
                 {/if}
-            </div>
 
-            {#if isPrompted}
-                <div flex gap-2 mb-4>
-                    <input
-                            bind:value={newMessage}
-                            placeholder="Type a message"
-                            on:keypress={(e) => e.key === 'Enter' && sendMessage()}
-                            bg-dark-800
-                            text-gray-100
-                            border-gray-700
-                            rounded
-                            p-2
-                            flex-grow
-                    />
-                    <Button on:click={sendMessage}>Send</Button>
+                <div flex flex-wrap gap-2>
+                    {#each choices as choice}
+                        <Button on:click={() => makeChoice(choice)}>{choice}</Button>
+                    {/each}
                 </div>
             {/if}
-
-            <div flex flex-wrap gap-2>
-                {#each choices as choice}
-                    <Button on:click={() => makeChoice(choice)}>{choice}</Button>
-                {/each}
-            </div>
 
         {/if}
         <!--        <div flex gap-2 mt-4>-->
