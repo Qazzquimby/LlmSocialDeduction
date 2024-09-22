@@ -231,6 +231,43 @@
         }
     }
 
+    function sendMessage() {
+        if (newMessage.trim() && isConnected) {
+            const message = {
+                type: 'player_action',
+                player: username,
+                action: 'speak',
+                message: newMessage
+            };
+            console.log("sending ", message)
+            ws.send(JSON.stringify(message));
+            newMessage = '';
+            isPrompted = false;
+        }
+    }
+
+    function makeChoice(choice: string) {
+        if (isConnected) {
+            const message = {
+                type: 'player_action',
+                player: username,
+                action: choice
+            };
+            ws.send(JSON.stringify(message));
+        }
+    }
+
+    function doNothingButton() {
+        console.log("do nothing button pushed")
+    }
+
+    function debugBackButton() {
+        fetch("http://localhost:8000/debug")
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(error => console.error(error));
+    }
+
 </script>
 
 <main bg-dark-900 text-gray-100 min-h-screen flex-col p-4 items-center font-sans>
@@ -268,22 +305,10 @@
 
 
             </div>
-            <div flex="~ col" mt-4rem>
-                <div class="game-card" bg-dark-800 p-4 rounded-lg mb-4 flex="~ wrap" items-center>
-                    <div min-w-12rem max-w-24rem>
-                        <h2 text-xl font-bold mb-2>One Night Ultimate Werewolf</h2>
-                        <p text-gray-400>A single round of night actions, talking, and voting.</p>
-                    </div>
-                    <div mx-1rem flex-grow flex items-center>
-                        <Button class="w-full px-2rem py-1rem bg-blue" on:click={connectWebSocket}>Start Game</Button>
-                    </div>
-                </div>
-            </div>
-
             {#if gameId}
                 <div mb-4>
                     {#if gameState}
-                        <p bg-dark-800 p-2 rounded text-lg>Current game state: {gameState}</p>
+                        <p bg-dark-800 p-2 rounded text-lg capitalize>{gameState}</p>
                     {/if}
                 </div>
 
@@ -300,7 +325,7 @@
                             </div>
                         {:else}
                             <div mb-2 italic text-gray-400>
-                                <strong>System:</strong> {message}
+                                {message}
                             </div>
                         {/if}
                     {/each}
@@ -332,6 +357,20 @@
                     {#each choices as choice}
                         <Button on:click={() => makeChoice(choice)}>{choice}</Button>
                     {/each}
+                </div>
+
+            {:else}
+                <div flex="~ col" mt-4rem>
+                    <div class="game-card" bg-dark-800 p-4 rounded-lg mb-4 flex="~ wrap" items-center>
+                        <div min-w-12rem max-w-24rem>
+                            <h2 text-xl font-bold mb-2>One Night Ultimate Werewolf</h2>
+                            <p text-gray-400>A single round of night actions, talking, and voting.</p>
+                        </div>
+                        <div mx-1rem flex-grow flex items-center>
+                            <Button class="w-full px-2rem py-1rem bg-blue" on:click={connectWebSocket}>Start Game
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             {/if}
 
