@@ -38,9 +38,14 @@ class WebSocketManager:
     async def send_personal_message(self, message: BaseEvent, user_id: str):
         if user_id in self.active_connections:
             try:
-                await self.active_connections[user_id].send_json(message.model_dump())
+                await asyncio.wait_for(
+                    self.active_connections[user_id].send_json(message.model_dump()),
+                    timeout=10.0,
+                )
             except RuntimeError as e:
                 raise RuntimeError(f"User {user_id} unexpectedly disconnected", e)
+            except asyncio.TimeoutError:
+                raise RuntimeError(f"Timeout sending message to {user_id}. {message}")
         else:
             raise RuntimeError(f"User {user_id} not connected")
 
@@ -66,6 +71,7 @@ class WebSocketManager:
                 else:
                     await self.message_queues[user_id].put(data)
         except WebSocketDisconnect:
+            logger.info(f"User {user_id} disconnected")
             self.disconnect(user_id)
         finally:
             logger.info(f"done listening to {user_id}")

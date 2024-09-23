@@ -308,8 +308,8 @@
 
 </script>
 
-<main   bg-dark-900 text-gray-100 min-h-screen  font-sans >
-    <div h-100vh max-w-3xl p-4 w-full mx-auto flex="~ col" items-center>
+<main bg-dark-900 text-gray-100 flex="~ col" h-screen  font-sans >
+    <div max-w-3xl p-4 w-full mx-auto flex="~ col grow" items-center>
         <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue font-mono>
             <span text-gray-400>t r</span> <span>a i</span> <span text-gray-400>t o r</span>
         </h1>
@@ -348,7 +348,7 @@
 
             </div>
             {#if gameId}
-                <div w-full flex="~ col" flex-grow>
+                <div w-full flex="~ col grow">
                     <div mb-4>
                         {#if gameState}
                             <p bg-dark-800 p-2 rounded text-lg capitalize>{gameState}</p>
