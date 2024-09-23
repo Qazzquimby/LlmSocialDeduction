@@ -375,29 +375,34 @@
                                 </div>
                             {/if}
                         {/each}
-                        {#if currentSpeaker}
-                            <div mt-2 italic text-gray-400>
-                                {currentSpeaker} is thinking...
-                            </div>
-                        {/if}
                     </div>
 
-                    {#if isPrompted}
-                        <div flex gap-2 mb-4>
-                            <input
+                    <div class="interaction-area" class:prompted={isPrompted} bg-dark-800 p-4 rounded mb-4>
+                        {#if currentSpeaker}
+                            <div italic text-gray-400>
+                                {currentSpeaker} is thinking...
+                            </div>
+                        {:else if isPrompted}
+                            <div flex gap-2>
+                                <input
                                     bind:value={newMessage}
                                     placeholder="Type a message"
                                     on:keypress={(e) => e.key === 'Enter' && sendMessage()}
-                                    bg-dark-800
+                                    bg-dark-700
                                     text-gray-100
-                                    border-gray-700
+                                    border-gray-600
                                     rounded
                                     p-2
                                     flex-grow
-                            />
-                            <Button on:click={sendMessage}>Send</Button>
-                        </div>
-                    {/if}
+                                />
+                                <Button on:click={sendMessage}>Send</Button>
+                            </div>
+                        {:else}
+                            <div italic text-gray-400>
+                                Waiting for the next action...
+                            </div>
+                        {/if}
+                    </div>
 
                     <div flex flex-wrap gap-2>
                         {#each choices as choice}
@@ -438,5 +443,15 @@
     .game-card:hover {
         transform: scale(1.01);
         box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .interaction-area {
+        transition: all 0.3s ease;
+    }
+
+    .interaction-area.prompted {
+        background-color: #2d3748;
+        border: 2px solid #4a5568;
+        box-shadow: 0 0 10px rgba(74, 85, 104, 0.5);
     }
 </style>
