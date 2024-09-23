@@ -308,8 +308,8 @@
 
 </script>
 
-<main bg-dark-900 text-gray-100 flex="~ col" h-screen  font-sans >
-    <div max-w-3xl p-4 w-full mx-auto flex="~ col grow" items-center>
+<main bg-dark-900 text-gray-100 flex="~ col" h-screen font-sans overflow-hidden>
+    <div max-w-3xl p-4 w-full mx-auto flex="~ col" h-full>
         <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue font-mono>
             <span text-gray-400>t r</span> <span>a i</span> <span text-gray-400>t o r</span>
         </h1>
@@ -348,14 +348,14 @@
 
             </div>
             {#if gameId}
-                <div w-full flex="~ col grow">
-                    <div mb-4>
+                <div w-full flex="~ col" h-full>
+                    <div mb-4 flex-shrink-0>
                         {#if gameState}
                             <p bg-dark-800 p-2 rounded text-lg capitalize>{gameState}</p>
                         {/if}
                     </div>
 
-                    <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4 min-h-64>
+                    <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
                         {#each messages as {type, username, message}}
                             {#if username && type === "speech"}
                                 <div
