@@ -230,6 +230,7 @@
             },
             'next_speaker': (msg: NextSpeakerMessage) => {
                 currentSpeaker = msg.player;
+                console.log("New currentSpeaker", currentSpeaker)
             }
         };
 
