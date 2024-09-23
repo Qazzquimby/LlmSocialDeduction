@@ -231,7 +231,7 @@ class OneNightWerewolf(Game):
             print(f"Total cost: {total_cost:.2f} USD")
             print("\n--- Game Over ---")
         finally:
-            logger.info(f"Game {id} ended")
+            logger.info(f"Game {self.id} ended")
 
     def get_key(self):
         """Returns the key of a random player. Intended to fairly distribute costs to present players."""
