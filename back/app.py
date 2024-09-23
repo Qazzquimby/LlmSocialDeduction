@@ -101,34 +101,28 @@ async def websocket_endpoint(
     user_id = user_login.user_id
     logger.info(f"User {name} (ID: {user_id}) connected")
 
-    try:
-        found_game_with_player = False
-        for game_manager in server_state.game_id_to_game_manager.values():
-            if game_manager.has_player(user_id):
-                web_human_player = game_manager.get_web_human_player(user_id)
-                await websocket_manager.connect(websocket, user_id)
-                await websocket_manager.resume_game(
-                    user_id, game_manager.game.id, web_human_player
-                )
-                await websocket_manager.listen_on_connection(websocket, user_id)
-                found_game_with_player = True
-                break
-
-        if not found_game_with_player:
-            game_manager = await server_state.setup_new_game(login=user_login)
+    found_game_with_player = False
+    for game_manager in server_state.game_id_to_game_manager.values():
+        if game_manager.has_player(user_id):
+            web_human_player = game_manager.get_web_human_player(user_id)
             await websocket_manager.connect(websocket, user_id)
-            listen_task = websocket_manager.listen_on_connection(websocket, user_id)
-
-            run_game_task = asyncio.create_task(
-                game_manager.game.play_game(),
-                name=f"play_game, {game_manager.game.id}",
+            await websocket_manager.resume_game(
+                user_id, game_manager.game.id, web_human_player
             )
-            await asyncio.gather(listen_task, run_game_task)
+            await websocket_manager.listen_on_connection(websocket, user_id)
+            found_game_with_player = True
+            break
 
-    finally:
-        await websocket_manager.disconnect(user_id)
-        if not game_manager.web_players:
-            print("Game empty, maybe shut down.")
+    if not found_game_with_player:
+        game_manager = await server_state.setup_new_game(login=user_login)
+        await websocket_manager.connect(websocket, user_id)
+        listen_task = websocket_manager.listen_on_connection(websocket, user_id)
+
+        run_game_task = asyncio.create_task(
+            game_manager.game.play_game(),
+            name=f"play_game, {game_manager.game.id}",
+        )
+        await asyncio.gather(listen_task, run_game_task)
 
 
 if __name__ == "__main__":

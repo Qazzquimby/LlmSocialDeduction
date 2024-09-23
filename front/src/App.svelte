@@ -11,6 +11,7 @@
         NextSpeakerMessage,
         BaseEvent
     } from '$lib/types';
+    import { Toaster  } from "$lib/components/ui/sonner";
     import { toast } from "svelte-sonner";
 
     let messages: BaseMessage[] = [];
@@ -308,6 +309,7 @@
 
 </script>
 
+<Toaster />
 <main bg-dark-900 text-gray-100 flex="~ col" h-screen font-sans overflow-hidden>
     <div max-w-3xl p-4 w-full mx-auto flex="~ col" h-full>
         <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue font-mono>
