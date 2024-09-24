@@ -60,9 +60,15 @@ class WebSocketManager:
     async def get_input(self, user_id: str, prompt: PromptMessage):
         await self.send_personal_message(prompt, user_id)
         logger.info(f"Waiting for input from {user_id}")
-        user_input = await self.input_queues[user_id].get()
-        logger.info(f"Got input from {user_id}: {user_input}")
-        return user_input
+        try:
+            user_input = await asyncio.wait_for(
+                self.input_queues[user_id].get(), timeout=20.0
+            )
+            logger.info(f"Got input from {user_id}: {user_input}")
+            return user_input
+        except asyncio.TimeoutError:
+            logger.warning(f"Got no input from {user_id}")
+            return "(No response)"
 
     async def listen_on_connection(self, websocket: WebSocket, user_id: str):
         logger.info(f"listening to {user_id}")
