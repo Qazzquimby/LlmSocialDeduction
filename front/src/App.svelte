@@ -427,10 +427,10 @@
             {/if}
 
         {/if}
-        <!--        <div flex gap-2 mt-4>-->
-        <!--            <Button on:click={doNothingButton}>Do Nothing</Button>-->
-        <!--            <Button on:click={debugBackButton}>Debug Back</Button>-->
-        <!--        </div>-->
+                <div flex gap-2 mt-4>
+                    <Button on:click={doNothingButton}>Do Nothing</Button>
+                    <Button on:click={debugBackButton}>Debug Back</Button>
+                </div>
     </div>
 </main>
 

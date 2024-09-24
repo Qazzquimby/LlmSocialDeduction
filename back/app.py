@@ -87,14 +87,14 @@ def get_server_state():
 @app.get("/debug")
 async def debug():
     for task in asyncio.all_tasks():
-        logger.info(f"Task {task.get_name()}: {task.get_coro().__qualname__}")
+        name = task.get_name()
+        qual_name = task.get_coro().__qualname__
+        logger.info(f"Task {name}: {qual_name}")
         if task.done():
             if task.exception():
-                logger.error(
-                    f"Task {task.get_name()} failed with exception: {task.exception()}"
-                )
+                logger.error(f"Task {name} failed with exception: {task.exception()}")
             else:
-                logger.info(f"Task {task.get_name()} completed successfully")
+                logger.info(f"Task {name} completed successfully")
     print("DEBUG")
     return
 

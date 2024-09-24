@@ -59,7 +59,10 @@ class WebSocketManager:
 
     async def get_input(self, user_id: str, prompt: PromptMessage):
         await self.send_personal_message(prompt, user_id)
-        return await self.input_queues[user_id].get()
+        logger.info(f"Waiting for input from {user_id}")
+        user_input = await self.input_queues[user_id].get()
+        logger.info(f"Got input from {user_id}: {user_input}")
+        return user_input
 
     async def listen_on_connection(self, websocket: WebSocket, user_id: str):
         logger.info(f"listening to {user_id}")
@@ -73,8 +76,6 @@ class WebSocketManager:
         except WebSocketDisconnect:
             logger.info(f"User {user_id} disconnected")
             self.disconnect(user_id)
-        finally:
-            logger.info(f"done listening to {user_id}")
 
     async def resume_game(self, user_id: str, game_id: str, web_human_player):
         await self.send_personal_message(
