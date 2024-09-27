@@ -33,6 +33,28 @@
     const serverRoot = import.meta.env.VITE_SERVER_ROOT;
     console.log("server root at ", serverRoot)
 
+    function mapServerUrl(url: string): string {
+        if (url.startsWith('ws://') || url.startsWith('wss://')) {
+            return url;
+        }
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        if (url.startsWith('/')) {
+            return `${wsProtocol}//${window.location.host}${url}`;
+        }
+        return url.replace(/^http:/, wsProtocol).replace(/^https:/, wsProtocol);
+    }
+
+    function mapHttpUrl(url: string): string {
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        const httpProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        if (url.startsWith('/')) {
+            return `${httpProtocol}//${window.location.host}${url}`;
+        }
+        return url.replace(/^ws:/, httpProtocol).replace(/^wss:/, httpProtocol);
+    }
+
     async function sha256CodeChallenge(input: string) {
         const encoder = new TextEncoder();
         const data = encoder.encode(input);
@@ -114,9 +136,7 @@
 
     function connectWebSocket() {
         console.log('Trying connection');
-        const url = gameId
-            ? `${serverRoot}/ws/${username}?api_key=${apiKey}&game_id=${gameId}`
-            : `${serverRoot}/ws/${username}?api_key=${apiKey}`;
+        const url = mapServerUrl(`${serverRoot}/ws/${username}?api_key=${apiKey}`);
         ws = new WebSocket(url);
 
         ws.onopen = () => {
@@ -136,7 +156,6 @@
                 console.log('Disconnected, attempting reconnect for ', username);
                 setTimeout(connectWebSocket, 1000);
             }
-
         };
 
         ws.onerror = (error) => {
@@ -144,7 +163,37 @@
         };
     }
 
+    async function startNewGame() {
+        if (!isConnected) {
+            console.error('WebSocket not connected');
+            return;
+        }
+
+        try {
+            const response = await fetch(mapHttpUrl(`${serverRoot}/start_game`), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: username, api_key: apiKey }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to start new game');
+            }
+
+            const data = await response.json();
+            gameId = data.gameId;
+            localStorage.setItem('gameId', gameId);
+        } catch (error) {
+            console.error('Error starting new game:', error);
+        }
+    }
+
     onMount(() => {
+        if (apiKey) {
+            connectWebSocket();
+        }
         return () => {
             if (ws) {
                 console.log("Closing websocket")
@@ -275,7 +324,7 @@
     }
 
     function debugBackButton() {
-        fetch("http://localhost:8000/debug")
+        fetch(mapHttpUrl(`${serverRoot}/debug`))
             .then(response => response.text())
             .then(data => console.log(data))
             .catch(error => console.error(error));
@@ -419,7 +468,7 @@
                             <p text-gray-400>A single round of night actions, talking, and voting.</p>
                         </div>
                         <div mx-1rem flex-grow flex items-center>
-                            <Button class="w-full px-2rem py-1rem bg-blue" on:click={connectWebSocket}>Start Game
+                            <Button class="w-full px-2rem py-1rem bg-blue" on:click={startNewGame}>Start New Game
                             </Button>
                         </div>
                     </div>

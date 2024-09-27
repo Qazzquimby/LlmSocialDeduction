@@ -110,28 +110,40 @@ async def websocket_endpoint(
     user_id = user_login.user_id
     logger.info(f"User {name} (ID: {user_id}) connected")
 
+    await websocket_manager.connect(websocket, user_id)
+
     found_game_with_player = False
     for game_manager in server_state.game_id_to_game_manager.values():
         if game_manager.has_player(user_id):
             web_human_player = game_manager.get_web_human_player(user_id)
-            await websocket_manager.connect(websocket, user_id)
             await websocket_manager.resume_game(
                 user_id, game_manager.game.id, web_human_player
             )
-            await websocket_manager.listen_on_connection(websocket, user_id)
             found_game_with_player = True
             break
 
     if not found_game_with_player:
-        game_manager = await server_state.setup_new_game(login=user_login)
-        await websocket_manager.connect(websocket, user_id)
-        listen_task = websocket_manager.listen_on_connection(websocket, user_id)
-
-        asyncio.create_task(
-            game_manager.game.play_game(),
-            name=f"play_game, {game_manager.game.id}",
+        await websocket_manager.send_personal_message(
+            BaseMessage(type="game_connect", message="No active game", gameId=None),
+            user_id
         )
-        await listen_task
+
+    await websocket_manager.listen_on_connection(websocket, user_id)
+
+@app.post("/start_game")
+async def start_game(
+    user_login: UserLogin,
+    server_state: ServerState = Depends(get_server_state),
+):
+    user_id = user_login.user_id
+    game_manager = await server_state.setup_new_game(login=user_login)
+    
+    asyncio.create_task(
+        game_manager.game.play_game(),
+        name=f"play_game, {game_manager.game.id}",
+    )
+
+    return {"gameId": game_manager.game.id}
 
 
 if __name__ == "__main__":
