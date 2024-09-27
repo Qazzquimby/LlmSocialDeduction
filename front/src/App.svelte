@@ -11,6 +11,7 @@
         NextSpeakerMessage,
         BaseEvent
     } from '$lib/types';
+    import { formatDistanceToNow } from 'date-fns';
     import { Toaster  } from "$lib/components/ui/sonner";
     import { toast } from "svelte-sonner";
 
@@ -261,13 +262,16 @@
         const handlers: { [key: string]: (msg: any) => void } = {
             "game_connect": (msg: GameConnectMessage) => {
                 isConnected = true;
-                gameId = msg.gameId;
-                localStorage.setItem('gameId', gameId);
+                if (gameId !== msg.gameId) {
+                    messages.set([]);
+                    gameId = msg.gameId;
+                    localStorage.setItem('gameId', gameId);
+                }
             },
             'game_started': (msg: GameStartedMessage) => {
                 gameState = 'Game started';
                 console.log("Clearing previous chat messages")
-                messages.set([{type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}`}]);
+                messages.set([{type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}`, timestamp: new Date()}]);
                 players = msg.players;
             },
             'phase': (msg: PhaseMessage) => {
@@ -413,7 +417,7 @@
                     </div>
 
                     <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
-                        {#each $messages as {type, username, message}}
+                        {#each $messages as {type, username, message, timestamp}}
                             {#if username && type === "speech"}
                                 <div
                                         mb-2
@@ -422,10 +426,12 @@
                                         style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
                                 >
                                     <strong>{username}:</strong> {message}
+                                    <span class="text-xs text-gray-500 ml-2">{timestamp ? formatDistanceToNow(new Date(timestamp), { addSuffix: true }) : ''}</span>
                                 </div>
                             {:else}
                                 <div mb-2 italic text-gray-400>
                                     {message}
+                                    <span class="text-xs text-gray-500 ml-2">{timestamp ? formatDistanceToNow(new Date(timestamp), { addSuffix: true }) : ''}</span>
                                 </div>
                             {/if}
                         {/each}

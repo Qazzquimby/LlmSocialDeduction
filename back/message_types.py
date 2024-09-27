@@ -6,9 +6,14 @@ class BaseEvent(BaseModel):
     type: str
 
 
+from datetime import datetime
+from pydantic import Field
+
+
 class BaseMessage(BaseEvent):
     message: str
     username: str = "System"
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 
 class GameConnectMessage(BaseMessage):
