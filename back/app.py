@@ -58,9 +58,10 @@ class GameManager:
         logger.info("Game ended due to inactivity")
 
     async def notify_next_speaker(self, player_name: str):
+        logger.info("next speaker call")
         await websocket_manager.broadcast(
-            NextSpeakerMessage(type="next_speaker", player=player_name),
-            [p.user_id for p in self.web_players],
+            message=NextSpeakerMessage(type="next_speaker", player=player_name),
+            users=[p.user_id for p in self.web_players],
         )
         for player in self.web_players:
             player.update_activity()
@@ -125,10 +126,11 @@ async def websocket_endpoint(
     if not found_game_with_player:
         await websocket_manager.send_personal_message(
             BaseMessage(type="game_connect", message="No active game", gameId=None),
-            user_id
+            user_id,
         )
 
     await websocket_manager.listen_on_connection(websocket, user_id)
+
 
 @app.post("/start_game")
 async def start_game(
@@ -137,7 +139,7 @@ async def start_game(
 ):
     user_id = user_login.user_id
     game_manager = await server_state.setup_new_game(login=user_login)
-    
+
     asyncio.create_task(
         game_manager.game.play_game(),
         name=f"play_game, {game_manager.game.id}",
