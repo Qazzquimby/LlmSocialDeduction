@@ -5,7 +5,13 @@ import asyncio
 from loguru import logger
 from typing import Dict
 
-from message_types import BaseMessage, NextSpeakerMessage
+from message_types import (
+    BaseMessage,
+    NextSpeakerMessage,
+    GameEndedMessage,
+    GameConnectMessage,
+    GameDisconnectMessage,
+)
 from player import WebHumanPlayer
 from websocket_management import websocket_manager, UserLogin
 
@@ -114,18 +120,29 @@ async def websocket_endpoint(
     await websocket_manager.connect(websocket, user_id)
 
     found_game_with_player = False
-    for game_manager in server_state.game_id_to_game_manager.values():
+    for game_id, game_manager in list(server_state.game_id_to_game_manager.items()):
         if game_manager.has_player(user_id):
-            web_human_player = game_manager.get_web_human_player(user_id)
-            await websocket_manager.resume_game(
-                user_id, game_manager.game.id, web_human_player
-            )
-            found_game_with_player = True
+            if game_manager.game_over:
+                # Remove the game that's no longer running
+                del server_state.game_id_to_game_manager[game_id]
+                await websocket_manager.send_personal_message(
+                    GameEndedMessage(
+                        message="The game you were in has ended. You can start a new game."
+                    ),
+                    user_id,
+                )
+            else:
+                web_human_player = game_manager.get_web_human_player(user_id)
+                await websocket_manager.resume_game(
+                    user_id, game_manager.game.id, web_human_player
+                )
+                found_game_with_player = True
             break
 
     if not found_game_with_player:
+        # If the game is not found or has ended, disconnect the user from their game ID
         await websocket_manager.send_personal_message(
-            BaseMessage(type="game_connect", message="No active game", gameId=None),
+            GameDisconnectMessage(message="No active game"),
             user_id,
         )
 

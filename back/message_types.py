@@ -21,9 +21,17 @@ class GameConnectMessage(BaseMessage):
     gameId: str
 
 
+class GameDisconnectMessage(BaseMessage):
+    type: Literal["game_disconnect"] = "game_disconnect"
+
+
 class GameStartedMessage(BaseMessage):
     type: Literal["game_started"] = "game_started"
     players: List[str]
+
+
+class GameEndedMessage(BaseMessage):
+    type: Literal["game_ended"] = "game_ended"
 
 
 class PhaseMessage(BaseMessage):

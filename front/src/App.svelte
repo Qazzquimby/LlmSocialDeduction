@@ -265,7 +265,11 @@
                 if (gameId !== msg.gameId) {
                     messages.set([]);
                     gameId = msg.gameId;
-                    localStorage.setItem('gameId', gameId);
+                    if (gameId) {
+                        localStorage.setItem('gameId', gameId);
+                    } else {
+                        localStorage.removeItem('gameId');
+                    }
                 }
             },
             'game_started': (msg: GameStartedMessage) => {
@@ -289,6 +293,13 @@
             'next_speaker': (msg: NextSpeakerMessage) => {
                 currentSpeaker = msg.player;
                 console.log("New currentSpeaker", currentSpeaker)
+            },
+            'game_ended': (msg: BaseMessage) => {
+                gameState = null;
+                gameId = null;
+                localStorage.removeItem('gameId');
+                messages.update(msgs => [...msgs, msg]);
+                toast(msg.message, {duration: 5000});
             }
         };
 
