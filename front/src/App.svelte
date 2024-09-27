@@ -366,6 +366,8 @@
         prevGameId = gameId;
     }
 
+    $: console.log("Debug messages", $messages)
+
 </script>
 
 <Toaster />
