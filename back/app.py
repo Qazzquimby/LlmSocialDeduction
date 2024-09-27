@@ -127,11 +127,11 @@ async def websocket_endpoint(
         await websocket_manager.connect(websocket, user_id)
         listen_task = websocket_manager.listen_on_connection(websocket, user_id)
 
-        run_game_task = asyncio.create_task(
+        asyncio.create_task(
             game_manager.game.play_game(),
             name=f"play_game, {game_manager.game.id}",
         )
-        await asyncio.gather(listen_task, run_game_task)
+        await listen_task
 
 
 if __name__ == "__main__":
