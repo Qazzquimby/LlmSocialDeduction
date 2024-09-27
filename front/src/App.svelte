@@ -14,7 +14,9 @@
     import { Toaster  } from "$lib/components/ui/sonner";
     import { toast } from "svelte-sonner";
 
-    let messages: BaseMessage[] = [];
+    import { writable } from 'svelte/store';
+
+    let messages = writable<BaseMessage[]>([]);
     let newMessage = '';
     let username = 'Human';
     let ws: WebSocket;
@@ -76,6 +78,9 @@
 
         // Redirect to OpenRouter auth page
         window.location.href = authUrl;
+    }
+    async function logout() {
+        localStorage.removeItem('apiKey')
     }
 
     async function exchangeCodeForKey(code: string, codeVerifier: string) {
@@ -262,20 +267,20 @@
             'game_started': (msg: GameStartedMessage) => {
                 gameState = 'Game started';
                 console.log("Clearing previous chat messages")
-                messages = [{type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}`}];
+                messages.set([{type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}`}]);
                 players = msg.players;
             },
             'phase': (msg: PhaseMessage) => {
                 gameState = `${msg.phase} phase`;
-                messages = [...messages, {type: 'phase', message: `${msg.phase} phase started`}];
+                messages.update(msgs => [...msgs, {type: 'phase', message: `${msg.phase} phase started`}]);
             },
             'speech': (msg: SpeechMessage) => {
-                messages = [...messages, msg as BaseMessage];
+                messages.update(msgs => [...msgs, msg as BaseMessage]);
                 currentSpeaker = null;
             },
             'prompt': (msg: PromptMessage) => {
                 isPrompted = true;
-                messages = [...messages, msg as BaseMessage];
+                messages.update(msgs => [...msgs, msg as BaseMessage]);
             },
             'next_speaker': (msg: NextSpeakerMessage) => {
                 currentSpeaker = msg.player;
@@ -287,7 +292,7 @@
         if (handler) {
             handler(message);
         } else if ('message' in message) {
-            messages = [...messages, message as BaseMessage];
+            messages.update(msgs => [...msgs, message as BaseMessage]);
         } else {
             console.warn('Received unknown message type:', message);
         }
@@ -379,7 +384,7 @@
             </div>
         {:else}
             <div ml-auto flex="~ col" items-end>
-                <Button on:click={login}>Log out</Button>
+                <Button on:click={logout}>Log out</Button>
 
                 <div>
                     <span>Server: </span>
@@ -408,7 +413,7 @@
                     </div>
 
                     <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
-                        {#each messages as {type, username, message}}
+                        {#each $messages as {type, username, message}}
                             {#if username && type === "speech"}
                                 <div
                                         mb-2
