@@ -405,7 +405,7 @@
 
             </div>
             {#if gameId}
-                <div w-full flex="~ col" h-full>
+                <div w-full flex="~ col" h-full min-h-0>
                     <div mb-4 flex-shrink-0>
                         {#if gameState}
                             <p bg-dark-800 p-2 rounded text-lg capitalize>{gameState}</p>
