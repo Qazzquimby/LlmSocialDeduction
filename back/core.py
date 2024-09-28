@@ -50,6 +50,10 @@ class Prompt:
                 messages=self.messages,
                 timeout=60,
                 num_retries=2,
+                fallbacks=[
+                    "openrouter/meta-llama/llama-3.1-8b-instruct:free",
+                    "openrouter/nousresearch/hermes-3-llama-3.1-405b:free",
+                ],
             )
         except Exception as e:
             print("COMPLETION FAILED. Try to manually fix before continuing.", e)
