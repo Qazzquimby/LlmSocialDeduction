@@ -362,7 +362,7 @@
         gameId = null;
         localStorage.removeItem('gameId');
         isConnected = false;
-        messages = [];
+        messages.set([])
         gameState = null;
         choices = [];
         players = [];

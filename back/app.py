@@ -142,7 +142,7 @@ async def websocket_endpoint(
     if not found_game_with_player:
         # If the game is not found or has ended, disconnect the user from their game ID
         await websocket_manager.send_personal_message(
-            GameDisconnectMessage(message="No active game"),
+            GameEndedMessage(message="No active game"),
             user_id,
         )
 
