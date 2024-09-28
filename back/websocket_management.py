@@ -62,7 +62,7 @@ class WebSocketManager:
         logger.info(f"Waiting for input from {user_id}")
         try:
             user_input = await asyncio.wait_for(
-                self.input_queues[user_id].get(), timeout=20.0
+                self.input_queues[user_id].get(), timeout=90.0
             )
             logger.info(f"Got input from {user_id}: {user_input}")
             return user_input
