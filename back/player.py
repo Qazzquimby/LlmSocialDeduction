@@ -326,7 +326,6 @@ class AIPlayer(Player):
         return response
 
     def mock_api_response(self, litellm_prompt: Prompt) -> str:
-        # This is a simple mock response. You can expand this to provide more realistic responses for testing.
         return f"Mock response for {self.name} using {self.model}"
 
 
