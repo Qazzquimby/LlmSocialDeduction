@@ -22,18 +22,15 @@ class WebSocketManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
         self.message_queues: Dict[str, asyncio.Queue] = {}
-        self.input_queues: Dict[str, asyncio.Queue] = {}
 
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
         self.active_connections[user_id] = websocket
         self.message_queues[user_id] = asyncio.Queue()
-        self.input_queues[user_id] = asyncio.Queue()
 
     def disconnect(self, user_id: str):
         self.active_connections.pop(user_id, None)
         self.message_queues.pop(user_id, None)
-        self.input_queues.pop(user_id, None)
 
     async def send_personal_message(self, message: BaseEvent, user_id: str):
         if user_id in self.active_connections:
@@ -62,7 +59,7 @@ class WebSocketManager:
         logger.info(f"Waiting for input from {user_id}")
         try:
             user_input = await asyncio.wait_for(
-                self.input_queues[user_id].get(), timeout=90.0
+                self.message_queues[user_id].get(), timeout=90.0
             )
             logger.info(f"Got input from {user_id}: {user_input}")
             return user_input
@@ -75,10 +72,7 @@ class WebSocketManager:
         try:
             while True:
                 data = await websocket.receive_json()
-                if isinstance(data, dict) and data.get("type") == "input":
-                    await self.input_queues[user_id].put(data["message"])
-                else:
-                    await self.message_queues[user_id].put(data)
+                await self.message_queues[user_id].put(data["message"])
         except WebSocketDisconnect:
             logger.info(f"User {user_id} disconnected")
             self.disconnect(user_id)
