@@ -72,6 +72,11 @@ class WebSocketManager:
         try:
             while True:
                 data = await websocket.receive_json()
+                if "type" in data:
+                    if data["action"] == "leave_game":
+                        self.disconnect(user_id)
+                        return
+
                 await self.message_queues[user_id].put(data["message"])
         except WebSocketDisconnect:
             logger.info(f"User {user_id} disconnected")
