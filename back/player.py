@@ -120,7 +120,7 @@ class HumanPlayer(Player):
         message = await self.prompt_with(
             "What would you like to say to the other players?"
         )
-        return f"Human: {message}"
+        return f"{message}"
 
     async def observe(self, event: BaseEvent):
         await super().observe(event)
@@ -240,7 +240,7 @@ class AIPlayer(Player):
         )
         message_to_broadcast = response.split("{")[-1]
         message_to_broadcast = message_to_broadcast.replace("}", "")
-        return f"{self.name}({self.model}): {message_to_broadcast}"
+        return f"{message_to_broadcast}"
 
     async def prompt_with(
         self, prompt: str, should_think=False, should_rules_check=False
@@ -326,7 +326,7 @@ class AIPlayer(Player):
         return response
 
     def mock_api_response(self, litellm_prompt: Prompt) -> str:
-        return f"Mock response for {self.name} using {self.model}"
+        return f"Mock response."
 
 
 async def everyone_observe(players: List[Player], event: BaseEvent):

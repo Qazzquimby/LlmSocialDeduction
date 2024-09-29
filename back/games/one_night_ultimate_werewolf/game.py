@@ -160,7 +160,13 @@ class OneNightWerewolf(Game):
             votes[player] = voted_player
 
         for player, voted_player in votes.items():
-            print(f"{player.name} voted for {voted_player.name}")
+            await everyone_observe(
+                self.state.players,
+                BaseMessage(
+                    type="player_voted",
+                    message=f"{player.name} voted for {voted_player.name}",
+                ),
+            )
 
         vote_count = {}
         for voted_player in votes.values():
