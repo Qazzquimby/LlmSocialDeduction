@@ -127,8 +127,7 @@
             apiKey = localStorage.getItem('apiKey');
         }
 
-        // If we have a gameId, reconnect to the game
-        if (gameId) {
+        if (apiKey) {
             connectWebSocket();
         }
 
@@ -195,19 +194,6 @@
             console.error('Error starting new game:', error);
         }
     }
-
-    onMount(() => {
-        if (apiKey) {
-            connectWebSocket();
-        }
-        return () => {
-            if (ws) {
-                console.log("Closing websocket")
-                ws.close();
-            }
-        };
-    });
-
 
     //color
     type OKLCHColor = [number, number, number]; // [lightness, chroma, hue]
