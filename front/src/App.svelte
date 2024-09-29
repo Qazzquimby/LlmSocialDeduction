@@ -244,6 +244,8 @@
     // /color
 
 
+    let chatInput: HTMLInputElement;
+
     function handleServerMessage(message: BaseEvent) {
         const handlers: { [key: string]: (msg: any) => void } = {
             "game_connect": (msg: GameConnectMessage) => {
@@ -278,7 +280,10 @@
             },
             'next_speaker': (msg: NextSpeakerMessage) => {
                 currentSpeaker = msg.player;
-                console.log("New currentSpeaker", currentSpeaker)
+                console.log("New currentSpeaker", currentSpeaker);
+                if (currentSpeaker === username && chatInput) {
+                    setTimeout(() => chatInput.focus(), 0);
+                }
             },
             'game_ended': (msg: BaseMessage) => {
                 gameState = null;
@@ -468,6 +473,7 @@
                             <div flex gap-2>
                                 <input
                                     bind:value={newMessage}
+                                    bind:this={chatInput}
                                     placeholder="Type a message"
                                     on:keypress={(e) => e.key === 'Enter' && sendMessage()}
                                     bg-dark-700
