@@ -366,11 +366,25 @@
     $: console.log("Debug messages", $messages)
 
     let messageContainer: HTMLDivElement;
+    let isScrolledToBottom = true;
+
+    function scrollToBottom() {
+        if (messageContainer && isScrolledToBottom) {
+            setTimeout(() => {
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            }, 0);
+        }
+    }
+
+    function handleScroll() {
+        if (messageContainer) {
+            const { scrollTop, scrollHeight, clientHeight } = messageContainer;
+            isScrolledToBottom = scrollTop + clientHeight >= scrollHeight - 5;
+        }
+    }
 
     $: if (messageContainer) {
-        setTimeout(() => {
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-        }, 0);
+        scrollToBottom();
     }
 
 </script>
@@ -423,7 +437,7 @@
                         {/if}
                     </div>
 
-                    <div bind:this={messageContainer} flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
+                    <div bind:this={messageContainer} on:scroll={handleScroll} flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
                         {#each $messages as {type, username, message, timestamp}, i}
                             {#if username && type === "speech"}
                                 <div class="message" class:first-message={i === 0 || $messages[i-1].username !== username}>
