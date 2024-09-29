@@ -35,3 +35,47 @@ async def websocket_connection_test():
         await browser.close()
 
 asyncio.run(websocket_connection_test())
+import asyncio
+import pytest
+from fastapi.testclient import TestClient
+from back.app import app, get_server_state
+from back.websocket_management import websocket_manager
+
+@pytest.fixture
+def test_app():
+    return TestClient(app)
+
+@pytest.mark.asyncio
+async def test_game_flow():
+    # This is a basic structure for an integration test
+    # You'll need to expand this based on your specific game flow
+    client = TestClient(app)
+    
+    # Start a game
+    response = client.post("/start_game", json={"name": "TestPlayer", "api_key": "test_key"})
+    assert response.status_code == 200
+    game_id = response.json()["gameId"]
+
+    # Connect to WebSocket
+    with client.websocket_connect(f"/ws/TestPlayer?api_key=test_key") as websocket:
+        # Wait for game to start
+        data = websocket.receive_json()
+        assert data["type"] == "game_started"
+
+        # Simulate game actions
+        # You'll need to add more assertions and actions based on your game flow
+        websocket.send_json({"type": "player_action", "action": "speak", "message": "Hello"})
+
+        # Wait for game to end
+        while True:
+            data = websocket.receive_json()
+            if data["type"] == "game_ended":
+                break
+
+    # Assert final game state
+    # Add assertions based on your expected game outcome
+
+# Add more test cases as needed
+
+if __name__ == "__main__":
+    pytest.main([__file__])
