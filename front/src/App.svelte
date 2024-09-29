@@ -365,6 +365,14 @@
 
     $: console.log("Debug messages", $messages)
 
+    let messageContainer: HTMLDivElement;
+
+    $: if (messageContainer) {
+        setTimeout(() => {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }, 0);
+    }
+
 </script>
 
 <Toaster />
@@ -415,22 +423,23 @@
                         {/if}
                     </div>
 
-                    <div flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
-                        {#each $messages as {type, username, message, timestamp}}
+                    <div bind:this={messageContainer} flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
+                        {#each $messages as {type, username, message, timestamp}, i}
                             {#if username && type === "speech"}
-                                <div
-                                        mb-2
-                                        p-2
-                                        rounded
-                                        style="background-color: {formatOKLCH(playerColors.get(username))}; color: {playerContrastColors.get(username)}"
-                                >
-                                    <strong>{username}:</strong> {message}
-                                    <span class="text-xs text-gray-500 ml-2">{timestamp ? formatDistanceToNow(new Date(timestamp), { addSuffix: true }) : ''}</span>
+                                <div class="message" class:first-message={i === 0 || $messages[i-1].username !== username}>
+                                    {#if i === 0 || $messages[i-1].username !== username}
+                                        <div class="message-header" style="color: {formatOKLCH(playerColors.get(username))}">
+                                            <strong>{username}</strong>
+                                            <span class="text-xs text-gray-500 ml-2">{formatDistanceToNow(new Date(timestamp), { addSuffix: true })}</span>
+                                        </div>
+                                    {/if}
+                                    <div class="message-content">
+                                        {message}
+                                    </div>
                                 </div>
                             {:else}
-                                <div mb-2 italic text-gray-400>
+                                <div class="system-message">
                                     {message}
-                                    <span class="text-xs text-gray-500 ml-2">{timestamp ? formatDistanceToNow(new Date(timestamp), { addSuffix: true }) : ''}</span>
                                 </div>
                             {/if}
                         {/each}
@@ -439,7 +448,7 @@
                     <div class="interaction-area" class:prompted={isPrompted} bg-dark-800 p-4 rounded mb-4>
                         {#if currentSpeaker}
                             <div italic text-gray-400>
-                                {currentSpeaker} is thinking...
+                                {currentSpeaker} is typing...
                             </div>
                         {:else if isPrompted}
                             <div flex gap-2>
@@ -458,7 +467,7 @@
                             </div>
                         {:else}
                             <div italic text-gray-400>
-                                Waiting for the next action...
+                                Wheels are in motion...
                             </div>
                         {/if}
                     </div>
@@ -512,5 +521,28 @@
         background-color: #2d3748;
         border: 2px solid #4a5568;
         box-shadow: 0 0 10px rgba(74, 85, 104, 0.5);
+    }
+
+    .message {
+        margin-bottom: 4px;
+    }
+
+    .message-header {
+        margin-top: 8px;
+        font-weight: bold;
+    }
+
+    .message-content {
+        padding-left: 8px;
+    }
+
+    .system-message {
+        margin-bottom: 8px;
+        font-style: italic;
+        color: #a0aec0;
+    }
+
+    .first-message {
+        margin-top: 8px;
     }
 </style>
