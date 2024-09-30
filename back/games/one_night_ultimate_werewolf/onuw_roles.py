@@ -103,26 +103,22 @@ class Seer(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        options = "0: Look at two center cards\n" + "\n".join(
-            [
-                f"{i}: Look at {p.name}'s card"
-                for i, p in enumerate(players, 1)
-                if p != player
-            ]
-        )
-        prompt = f"{player.name}, choose a number:\n{options}\nEnter your choice:"
-        choice = await player.get_choice(prompt)
+        choices = [
+            (0, "Look at two center cards")
+        ] + [
+            (i, f"Look at {p.name}'s card")
+            for i, p in enumerate(players, 1)
+            if p != player
+        ]
+        prompt = f"{player.name}, choose an action:"
+        choice = await player.get_choice(prompt, choices)
 
-        if len(choice) >= 1 and choice[0] == 0:
+        if choice[0] == 0:
             cards = game_state.center_cards[:2]
-            return (
-                f"You see the following center cards: {cards[0].name}, {cards[1].name}"
-            )
-        elif len(choice) >= 1 and 1 <= choice[0] <= len(players):
+            return f"You see the following center cards: {cards[0].name}, {cards[1].name}"
+        else:
             target = players[choice[0] - 1]
             return f"You see that {target.name}'s role is: {target.role.name}"
-        else:
-            return "Invalid choice. You lose your night action."
 
     def get_rules(self) -> str:
         return "During the night, the seer can either see the role of another player, or see *two* of the unused center cards."
@@ -157,20 +153,17 @@ class Robber(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        options = "\n".join(
-            [f"{i}: Rob {p.name}" for i, p in enumerate(players, 1) if p != player]
-        )
-        prompt = (
-            f"{player.name}, choose a player to rob:\n{options}\nEnter your choice:"
-        )
-        choice = await player.get_choice(prompt)
+        choices = [
+            (i, f"Rob {p.name}")
+            for i, p in enumerate(players, 1)
+            if p != player
+        ]
+        prompt = f"{player.name}, choose a player to rob:"
+        choice = await player.get_choice(prompt, choices)
 
-        if len(choice) >= 1 and 1 <= choice[0] <= len(players):
-            target = players[choice[0] - 1]
-            player.role, target.role = target.role, player.role
-            return f"You swapped roles with {target.name}. Your new role is: {player.role.name}"
-        else:
-            return "Invalid choice. You lose your night action."
+        target = players[choice[0] - 1]
+        player.role, target.role = target.role, player.role
+        return f"You swapped roles with {target.name}. Your new role is: {player.role.name}"
 
     def get_rules(self) -> str:
         return "During the night, the Robber may swap their card with another player's card and see what their new card is. The other player won't know their card changed."
@@ -200,18 +193,15 @@ class Troublemaker(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        options = "\n".join(
-            [f"{i}: {p.name}" for i, p in enumerate(players, 1) if p != player]
-        )
-        prompt = f"{player.name}, choose two players to swap roles:\n{options}\nEnter the choices numbers of both players separated by a space, like `2 3`. For example you might say your thoughts and then {{1 3, Tom and Ernie, Since this is the start of the game I'm choosing mostly at random.}}"
-        choices = await player.get_choice(prompt)
+        choices = [
+            (i, p.name)
+            for i, p in enumerate(players, 1)
+            if p != player
+        ]
+        prompt = f"{player.name}, choose two players to swap roles:"
+        choices = await player.get_choice(prompt, choices, choose_multiple=True)
 
-        if (
-            len(choices) == 2
-            and 1 <= choices[0] <= len(players)
-            and 1 <= choices[1] <= len(players)
-            and choices[0] != choices[1]
-        ):
+        if len(choices) == 2 and choices[0] != choices[1]:
             player1 = players[choices[0] - 1]
             player2 = players[choices[1] - 1]
             player1.role, player2.role = player2.role, player1.role

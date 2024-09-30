@@ -66,7 +66,9 @@ class Player:
         vote = await self.get_choice(question, choices)
         return other_players[vote[0]]
 
-    async def get_choice(self, prompt: str, choices: List[tuple], choose_multiple=False) -> List[int]:
+    async def get_choice(
+        self, prompt: str, choices: List[tuple], choose_multiple=False
+    ) -> List[int]:
         choice_prompt = prompt + "\n"
         for i, (choice, description) in enumerate(choices):
             choice_prompt += f"{i}: {description}\n"
@@ -91,14 +93,21 @@ class Player:
         )
 
         numbers = [int(word) for word in words if word.isnumeric()]
-        
+
         valid_choices = list(range(len(choices)))
         numbers = [num for num in numbers if num in valid_choices]
 
         if not numbers:
             # If no valid choice was made, pick a random valid choice
-            return [random.choice(valid_choices)]
-        
+            random_choice = random.choice(valid_choices)
+            await self.observe(
+                BaseMessage(
+                    type="Invalid input",
+                    message=f"Invalid choice. Randomly chose {random_choice}",
+                )
+            )
+            return [random_choice]
+
         return numbers
 
     async def prompt_with(self, prompt: str, should_think=False) -> str:
