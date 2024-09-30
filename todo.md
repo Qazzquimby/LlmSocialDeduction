@@ -10,6 +10,7 @@ buttons.
 
 Todo:
 
-- There's no proper testing. Any calls to apis should be avoidable with minimal code changes.
-- websocket management is spread out between app and webplayer. Maybe it could mostly be moved to
-  webapi player?
+- nextspeaker messages arrive without showing the player who's next to speak. It's undefined in the frontend like a BaseMessage.
+- when player is prompted to speak, cursor should jump to the chat bar so they can start typing without needing to click it.
+- When its the user's turn to speak, if they refresh (disconnect reconnect) they aren't given the chat bar to enter text.
+- integration testing is probably a good idea. AI can already be mocked out.

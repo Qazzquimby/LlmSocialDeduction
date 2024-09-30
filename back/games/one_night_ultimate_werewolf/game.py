@@ -13,6 +13,7 @@ from message_types import (
     PhaseMessage,
     SpeechMessage,
     PlayerActionMessage,
+    NextSpeakerMessage,
 )
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
@@ -135,10 +136,7 @@ class OneNightWerewolf(Game):
             for speaker in self.state.players:
                 await everyone_observe(
                     self.state.players,
-                    BaseMessage(
-                        type="next_speaker",
-                        message=f"It's {speaker.name}'s turn to speak.",
-                    ),
+                    NextSpeakerMessage(player=speaker.name),
                 )
                 message = await speaker.speak()
                 await everyone_observe(

@@ -21,6 +21,18 @@ export interface GameConnectMessage {
   timestamp?: string;
   gameId: string;
 }
+export interface GameDisconnectMessage {
+  type?: "game_disconnect";
+  message: string;
+  username?: string;
+  timestamp?: string;
+}
+export interface GameEndedMessage {
+  type?: "game_ended";
+  message: string;
+  username?: string;
+  timestamp?: string;
+}
 export interface GameStartedMessage {
   type?: "game_started";
   message: string;

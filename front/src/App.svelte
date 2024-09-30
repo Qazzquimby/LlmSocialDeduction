@@ -9,7 +9,7 @@
         SpeechMessage,
         PromptMessage,
         NextSpeakerMessage,
-        BaseEvent
+        BaseEvent, GameEndedMessage
     } from '$lib/types';
     import { formatDistanceToNow } from 'date-fns';
     import { Toaster  } from "$lib/components/ui/sonner";
@@ -265,6 +265,13 @@
                 console.log("Clearing previous chat messages")
                 messages.set([{type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}`, timestamp: new Date()}]);
                 players = msg.players;
+            },
+            'game_ended': (msg: GameEndedMessage) => {
+                gameState = 'Game ended';
+                gameId = null;
+                localStorage.removeItem('gameId');
+                messages.update(msgs => [...msgs, msg]);
+                toast(msg.message, {duration: 5000});
             },
             'phase': (msg: PhaseMessage) => {
                 gameState = `${msg.phase} phase`;

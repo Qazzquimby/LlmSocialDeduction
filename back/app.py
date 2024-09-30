@@ -63,15 +63,6 @@ class GameManager:
         self.game_over = True
         logger.info("Game ended due to inactivity")
 
-    async def notify_next_speaker(self, player_name: str):
-        logger.info("next speaker call")
-        await websocket_manager.broadcast(
-            message=NextSpeakerMessage(type="next_speaker", player=player_name),
-            users=[p.user_id for p in self.web_players],
-        )
-        for player in self.web_players:
-            player.update_activity()
-
 
 class ServerState:
     def __init__(self):
