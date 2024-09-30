@@ -10,7 +10,6 @@ buttons.
 
 Todo:
 
-- nextspeaker messages arrive without showing the player who's next to speak. It's undefined in the frontend like a BaseMessage.
-- when player is prompted to speak, cursor should jump to the chat bar so they can start typing without needing to click it.
+- When an invalid input is entered, we should pick a random valid action rather than doing nothing.
+- If a webplayer doesn't enter a message in time, they still have their textbox. Not sure whats good UX here. It doesn't show their time limit or anything.
 - When its the user's turn to speak, if they refresh (disconnect reconnect) they aren't given the chat bar to enter text.
-- integration testing is probably a good idea. AI can already be mocked out.
