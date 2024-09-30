@@ -311,18 +311,34 @@
         }
     }
 
-    function sendMessage() {
-        if (newMessage.trim() && isConnected) {
+    let timeLeft = 90; // 90 seconds timeout
+    let timer: number = 0;
+
+    function startTimer() {
+        timeLeft = 90;
+        if (timer) clearInterval(timer);
+        timer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                sendMessage(true);
+            }
+        }, 1000);
+    }
+
+    function sendMessage(timeout = false) {
+        if ((newMessage.trim() || timeout) && isConnected) {
             const message = {
                 type: 'player_action',
                 player: username,
                 action: 'speak',
-                message: newMessage
+                message: timeout ? "(No response)" : newMessage
             };
             console.log("sending ", message)
             ws.send(JSON.stringify(message));
             newMessage = '';
             isPrompted = false;
+            clearInterval(timer);
         }
     }
 
@@ -477,7 +493,11 @@
                                 {currentSpeaker} is typing...
                             </div>
                         {:else if isPrompted}
-                            <div flex gap-2>
+                            <div flex="~ col" gap-2>
+                                <div flex items-center justify-between>
+                                    <span>Time left: {timeLeft}s</span>
+                                    <Button on:click={sendMessage}>Send</Button>
+                                </div>
                                 <input
                                     bind:value={newMessage}
                                     bind:this={chatInput}
@@ -489,8 +509,8 @@
                                     rounded
                                     p-2
                                     flex-grow
+                                    disabled={timeLeft <= 0}
                                 />
-                                <Button on:click={sendMessage}>Send</Button>
                             </div>
                         {:else}
                             <div italic text-gray-400>
