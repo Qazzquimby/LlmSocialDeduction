@@ -7,10 +7,8 @@ from typing import Dict
 
 from message_types import (
     BaseMessage,
-    NextSpeakerMessage,
     GameEndedMessage,
-    GameConnectMessage,
-    GameDisconnectMessage,
+    PromptMessage,
 )
 from player import WebHumanPlayer
 from websocket_management import websocket_manager, UserLogin
@@ -127,6 +125,17 @@ async def websocket_endpoint(
                 await websocket_manager.resume_game(
                     user_id, game_manager.game.id, web_human_player
                 )
+                # Resend the last prompt message if it exists
+                last_prompt = next(
+                    (
+                        msg
+                        for msg in reversed(web_human_player.observations)
+                        if isinstance(msg, PromptMessage)
+                    ),
+                    None,
+                )
+                if last_prompt:
+                    await websocket_manager.send_personal_message(last_prompt, user_id)
                 found_game_with_player = True
             break
 
