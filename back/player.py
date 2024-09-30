@@ -61,28 +61,22 @@ class Player:
             other_player for other_player in players if other_player != self
         ]
         question = "Which player do you want to vote to execute?"
-        for i, player in enumerate(other_players):
-            question += f"\n{i}: {player.name}"
+        choices = [(i, player.name) for i, player in enumerate(other_players)]
 
-        vote = await self.get_choice(question)
-        if vote:
-            return players[vote[0]]
-        else:
-            return random.choice(players)
+        vote = await self.get_choice(question, choices)
+        return other_players[vote[0]]
 
-    async def get_choice(self, prompt: str, choose_multiple=False) -> List[int]:
+    async def get_choice(self, prompt: str, choices: List[tuple], choose_multiple=False) -> List[int]:
+        choice_prompt = prompt + "\n"
+        for i, (choice, description) in enumerate(choices):
+            choice_prompt += f"{i}: {description}\n"
+
         if choose_multiple:
-            response = await self.prompt_with(
-                prompt
-                + "\n Your final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}.",
-                should_think=True,
-            )
+            choice_prompt += "\nYour final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}."
         else:
-            response = await self.prompt_with(
-                prompt
-                + "\n Your final answer must take the form {choice_number, choice name}, eg {1, Bob}.",
-                should_think=True,
-            )
+            choice_prompt += "\nYour final answer must take the form {choice_number, choice name}, eg {1, Bob}."
+
+        response = await self.prompt_with(choice_prompt, should_think=True)
 
         formatted_answer = response.split("{")[-1]
         words = (
@@ -97,6 +91,14 @@ class Player:
         )
 
         numbers = [int(word) for word in words if word.isnumeric()]
+        
+        valid_choices = list(range(len(choices)))
+        numbers = [num for num in numbers if num in valid_choices]
+
+        if not numbers:
+            # If no valid choice was made, pick a random valid choice
+            return [random.choice(valid_choices)]
+        
         return numbers
 
     async def prompt_with(self, prompt: str, should_think=False) -> str:
