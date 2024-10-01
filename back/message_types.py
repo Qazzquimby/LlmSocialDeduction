@@ -45,6 +45,10 @@ class SpeechMessage(BaseMessage):
 
 class PromptMessage(BaseMessage):
     type: Literal["prompt"] = "prompt"
+    choices: Optional[List[tuple[int, str]]] = None
+    multiple: bool = False
+    min_choices: int = 1
+    max_choices: Optional[int] = None
 
 
 class NextSpeakerMessage(BaseEvent):

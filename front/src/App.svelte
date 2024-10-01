@@ -11,11 +11,11 @@
         NextSpeakerMessage,
         BaseEvent, GameEndedMessage
     } from '$lib/types';
-    import { formatDistanceToNow } from 'date-fns';
-    import { Toaster  } from "$lib/components/ui/sonner";
-    import { toast } from "svelte-sonner";
+    import {formatDistanceToNow} from 'date-fns';
+    import {Toaster} from "$lib/components/ui/sonner";
+    import {toast} from "svelte-sonner";
 
-    import { writable } from 'svelte/store';
+    import {writable} from 'svelte/store';
 
     let messages = writable<BaseMessage[]>([]);
     let newMessage = '';
@@ -80,6 +80,7 @@
         // Redirect to OpenRouter auth page
         window.location.href = authUrl;
     }
+
     async function logout() {
         localStorage.removeItem('apiKey')
     }
@@ -180,7 +181,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ name: username, api_key: apiKey }),
+                body: JSON.stringify({name: username, api_key: apiKey}),
             });
 
             if (!response.ok) {
@@ -263,7 +264,11 @@
             'game_started': (msg: GameStartedMessage) => {
                 gameState = 'Game started';
                 console.log("Clearing previous chat messages")
-                messages.set([{type: 'game_started', message: `Game started with players: ${msg.players.join(', ')}`, timestamp: new Date()}]);
+                messages.set([{
+                    type: 'game_started',
+                    message: `Game started with players: ${msg.players.join(', ')}`,
+                    timestamp: new Date()
+                }]);
                 players = msg.players;
             },
             'game_ended': (msg: GameEndedMessage) => {
@@ -283,6 +288,10 @@
             },
             'prompt': (msg: PromptMessage) => {
                 isPrompted = true;
+                choices = msg.choices || [];
+                multipleChoices = msg.multiple;
+                minChoices = msg.min_choices;
+                maxChoices = msg.max_choices;
                 messages.update(msgs => [...msgs, msg as BaseMessage]);
             },
             'next_speaker': (msg: NextSpeakerMessage) => {
@@ -342,14 +351,39 @@
         }
     }
 
-    function makeChoice(choice: string) {
-        if (isConnected) {
+    let selectedChoices: number[] = [];
+    let multipleChoices = false;
+    let minChoices = 1;
+    let maxChoices: number | null = null;
+
+    function toggleChoice(value: number) {
+        if (multipleChoices) {
+            const index = selectedChoices.indexOf(value);
+            if (index === -1) {
+                selectedChoices = [...selectedChoices, value];
+            } else {
+                selectedChoices = selectedChoices.filter(v => v !== value);
+            }
+        } else {
+            selectedChoices = [value];
+        }
+    }
+
+    function isValidSelection() {
+        return selectedChoices.length >= minChoices &&
+            (maxChoices === null || selectedChoices.length <= maxChoices);
+    }
+
+    function submitChoices() {
+        if (isConnected && isValidSelection()) {
             const message = {
                 type: 'player_action',
                 player: username,
-                action: choice
+                action: 'make_choice',
+                choices: selectedChoices
             };
             ws.send(JSON.stringify(message));
+            selectedChoices = [];
         }
     }
 
@@ -406,7 +440,7 @@
 
     function handleScroll() {
         if (messageContainer) {
-            const { scrollTop, scrollHeight, clientHeight } = messageContainer;
+            const {scrollTop, scrollHeight, clientHeight} = messageContainer;
             isScrolledToBottom = scrollTop + clientHeight >= scrollHeight - 5;
         }
     }
@@ -417,7 +451,7 @@
 
 </script>
 
-<Toaster />
+<Toaster/>
 <main bg-dark-900 text-gray-100 flex="~ col" h-screen font-sans overflow-hidden>
     <div max-w-3xl p-4 w-full mx-auto flex="~ col" h-full>
         <h1 text-3xl text-center font-bold mb-6 text-shadow-sm text-shadow-neon-blue font-mono>
@@ -465,14 +499,17 @@
                         {/if}
                     </div>
 
-                    <div bind:this={messageContainer} on:scroll={handleScroll} flex-grow overflow-y-auto bg-dark-800 rounded p-4 mb-4>
+                    <div bind:this={messageContainer} on:scroll={handleScroll} flex-grow overflow-y-auto bg-dark-800
+                         rounded p-4 mb-4>
                         {#each $messages as {type, username, message, timestamp}, i}
                             {#if username && type === "speech"}
-                                <div class="message" class:first-message={i === 0 || $messages[i-1].username !== username}>
-                                    {#if i === 0 || $messages[i-1].username !== username}
-                                        <div class="message-header" style="color: {formatOKLCH(playerColors.get(username))}">
+                                <div class="message"
+                                     class:first-message={i === 0 || $messages[i-1].username !== username}>
+                                    {#if i === 0 || $messages[i - 1].username !== username}
+                                        <div class="message-header"
+                                             style="color: {formatOKLCH(playerColors.get(username))}">
                                             <strong>{username}</strong>
-                                            <span class="text-xs text-gray-500 ml-2">{formatDistanceToNow(new Date(timestamp), { addSuffix: true })}</span>
+                                            <span class="text-xs text-gray-500 ml-2">{formatDistanceToNow(new Date(timestamp), {addSuffix: true})}</span>
                                         </div>
                                     {/if}
                                     <div class="message-content">
@@ -499,17 +536,17 @@
                                     <Button on:click={sendMessage}>Send</Button>
                                 </div>
                                 <input
-                                    bind:value={newMessage}
-                                    bind:this={chatInput}
-                                    placeholder="Type a message"
-                                    on:keypress={(e) => e.key === 'Enter' && sendMessage()}
-                                    bg-dark-700
-                                    text-gray-100
-                                    border-gray-600
-                                    rounded
-                                    p-2
-                                    flex-grow
-                                    disabled={timeLeft <= 0}
+                                        bind:value={newMessage}
+                                        bind:this={chatInput}
+                                        placeholder="Type a message"
+                                        on:keypress={(e) => e.key === 'Enter' && sendMessage()}
+                                        bg-dark-700
+                                        text-gray-100
+                                        border-gray-600
+                                        rounded
+                                        p-2
+                                        flex-grow
+                                        disabled={timeLeft <= 0}
                                 />
                             </div>
                         {:else}
@@ -520,9 +557,24 @@
                     </div>
 
                     <div flex flex-wrap gap-2>
-                        {#each choices as choice}
-                            <Button on:click={() => makeChoice(choice)}>{choice}</Button>
-                        {/each}
+                        {#if choices.length > 0}
+                            <div class="choices-container">
+                                <p>{$messages[$messages.length - 1].message}</p>
+                                {#each choices as [value, label]}
+                                    <div class:selected={selectedChoices.includes(value)}>
+                                        <Button on:click={() => toggleChoice(value)}>
+                                            {label}
+                                        </Button>
+                                    </div>
+                                {/each}
+                                <Button
+                                        on:click={submitChoices}
+                                        disabled={!isValidSelection()}
+                                >
+                                    Submit
+                                </Button>
+                            </div>
+                        {/if}
                     </div>
                 </div>
 
@@ -542,10 +594,10 @@
             {/if}
 
         {/if}
-                <div flex gap-2 mt-4>
-                    <Button on:click={doNothingButton}>Do Nothing</Button>
-                    <Button on:click={debugBackButton}>Debug Back</Button>
-                </div>
+        <div flex gap-2 mt-4>
+            <Button on:click={doNothingButton}>Do Nothing</Button>
+            <Button on:click={debugBackButton}>Debug Back</Button>
+        </div>
     </div>
 </main>
 

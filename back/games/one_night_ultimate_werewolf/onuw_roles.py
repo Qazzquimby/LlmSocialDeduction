@@ -103,19 +103,19 @@ class Seer(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        choices = [
-            (0, "Look at two center cards")
-        ] + [
+        choices = [(0, "Look at two center cards")] + [
             (i, f"Look at {p.name}'s card")
             for i, p in enumerate(players, 1)
             if p != player
         ]
-        prompt = f"{player.name}, choose an action:"
+        prompt = f"Choose an action:"
         choice = await player.get_choice(prompt, choices)
 
         if choice[0] == 0:
             cards = game_state.center_cards[:2]
-            return f"You see the following center cards: {cards[0].name}, {cards[1].name}"
+            return (
+                f"You see the following center cards: {cards[0].name}, {cards[1].name}"
+            )
         else:
             target = players[choice[0] - 1]
             return f"You see that {target.name}'s role is: {target.role.name}"
@@ -153,15 +153,11 @@ class Robber(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        choices = [
-            (i, f"Rob {p.name}")
-            for i, p in enumerate(players, 1)
-            if p != player
-        ]
-        prompt = f"{player.name}, choose a player to rob:"
+        choices = [(i, f"Rob {p.name}") for i, p in enumerate(players) if p != player]
+        prompt = f"Choose a player to rob:"
         choice = await player.get_choice(prompt, choices)
 
-        target = players[choice[0] - 1]
+        target = players[choice[0]]
         player.role, target.role = target.role, player.role
         return f"You swapped roles with {target.name}. Your new role is: {player.role.name}"
 
@@ -193,21 +189,16 @@ class Troublemaker(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        choices = [
-            (i, p.name)
-            for i, p in enumerate(players, 1)
-            if p != player
-        ]
-        prompt = f"{player.name}, choose two players to swap roles:"
-        choices = await player.get_choice(prompt, choices, choose_multiple=True)
+        legal_choices = [(i, p.name) for i, p in enumerate(players) if p != player]
+        prompt = f"Choose two players to swap roles:"
+        choices = await player.get_choice(
+            prompt, legal_choices, choose_multiple=True, min_choices=2, max_choices=2
+        )
 
-        if len(choices) == 2 and choices[0] != choices[1]:
-            player1 = players[choices[0] - 1]
-            player2 = players[choices[1] - 1]
-            player1.role, player2.role = player2.role, player1.role
-            return f"You swapped the roles of {player1.name} and {player2.name}."
-        else:
-            return "Invalid choice. You lose your night action."
+        player1 = players[choices[0]]
+        player2 = players[choices[1]]
+        player1.role, player2.role = player2.role, player1.role
+        return f"You swapped the roles of {player1.name} and {player2.name}."
 
     def get_rules(self) -> str:
         return "The Troublemaker may swap two other players' cards without seeing them during the night phase."
@@ -324,22 +315,20 @@ class Thing(ONUWRole):
             game_state.players[previous_index],
             game_state.players[next_index],
         ]
+        legal_choices = [(i, f"Tap {p.name}") for i, p in enumerate(adjacent_players)]
 
         choices = await player.get_choice(
-            "choose an adjacent player to tap: "
-            + "\n".join([f"{i}: {p.name}" for i, p in enumerate(adjacent_players, 1)])
+            "choose an adjacent player to tap: ", legal_choices
         )
+        choice = choices[0]
+        tapped_player = adjacent_players[choice]
 
-        if len(choices) == 1 and 1 <= choices[0] <= len(adjacent_players):
-            target = adjacent_players[choices[0] - 1]
-            await target.observe(
-                ObservationMessage(
-                    message="A player before or after you in turn order is the Thing and tapped you."
-                )
+        await tapped_player.observe(
+            ObservationMessage(
+                message="A player before or after you in turn order is the Thing and tapped you."
             )
-            return f"You tap {target.name}."
-        else:
-            return "Invalid choice. You lose your night action."
+        )
+        return f"You tap {tapped_player.name}."
 
 
 class Doppelganger(ONUWRole):
@@ -364,25 +353,22 @@ class Doppelganger(ONUWRole):
         self, player: "Player", game_state: "GameState"
     ) -> Optional[str]:
         players = game_state.players
-        options = "\n".join(
-            [f"{i}: Copy {p.name}" for i, p in enumerate(players, 1) if p != player]
+        legal_choices = [
+            (i, f"Copy {p.name}") for i, p in enumerate(players) if p != player
+        ]
+        choices = await player.get_choice(
+            prompt="Choose a player to copy their role:", choices=legal_choices
         )
-        prompt = f"{player.name}, choose a player to copy their role:\n{options}\nEnter your choice:"
-        choice = await player.get_choice(prompt)
+        choice = choices[0]
 
-        if len(choice) >= 1 and 1 <= choice[0] <= len(players):
-            target = players[choice[0] - 1]
-            action_text = f"You copied the role of {target.name}. Your new role is: {target.role.name}"
+        target = players[choice]
+        action_text = f"You copied the role of {target.name}. Your new role is: {target.role.name}"
 
-            player.role = target.role
-            second_night_action_text = await player.role.night_action(
-                player, game_state
-            )
-            if second_night_action_text:
-                action_text += f"\nThen, as the new role: " + second_night_action_text
-            return action_text
-        else:
-            return "Invalid choice. You lose your night action."
+        player.role = target.role
+        second_night_action_text = await player.role.night_action(player, game_state)
+        if second_night_action_text:
+            action_text += f"\nThen, as the new role: " + second_night_action_text
+        return action_text
 
     def get_general_strategy_lines(self) -> List[str]:
         return [

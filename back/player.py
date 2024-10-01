@@ -1,6 +1,6 @@
 import asyncio
 import random
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Tuple
 
 from loguru import logger
 
@@ -67,48 +67,45 @@ class Player:
         return other_players[vote[0]]
 
     async def get_choice(
-        self, prompt: str, choices: List[tuple], choose_multiple=False
+        self,
+        prompt: str,
+        choices: List[Tuple[int, str]],
+        choose_multiple=False,
+        min_choices=1,
+        max_choices=None,
     ) -> List[int]:
-        choice_prompt = prompt + "\n"
-        for i, (choice, description) in enumerate(choices):
-            choice_prompt += f"{i}: {description}\n"
-
-        if choose_multiple:
-            choice_prompt += "\nYour final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}."
-        else:
-            choice_prompt += "\nYour final answer must take the form {choice_number, choice name}, eg {1, Bob}."
-
-        response = await self.prompt_with(choice_prompt, should_think=True)
-
-        formatted_answer = response.split("{")[-1]
-        words = (
-            formatted_answer.replace(",", " ")
-            .replace('"', " ")
-            .replace("'", " ")
-            .replace(".", " ")
-            .replace("*", " ")
-            .replace(":", " ")
-            .replace("}", " ")
-            .split(" ")
+        prompt_message = PromptMessage(
+            message=prompt,
+            choices=choices,
+            multiple=choose_multiple,
+            min_choices=min_choices,
+            max_choices=max_choices,
         )
+        response = await self.prompt_with(prompt_message, should_think=True)
 
-        numbers = [int(word) for word in words if word.isnumeric()]
+        try:
+            selected_choices = [int(choice) for choice in response.split(",")]
+            valid_choices = list(range(len(choices)))
+            selected_choices = [
+                choice for choice in selected_choices if choice in valid_choices
+            ]
 
-        valid_choices = list(range(len(choices)))
-        numbers = [num for num in numbers if num in valid_choices]
+            if len(selected_choices) < min_choices or (
+                max_choices and len(selected_choices) > max_choices
+            ):
+                raise ValueError("Invalid number of choices")
 
-        if not numbers:
-            # If no valid choice was made, pick a random valid choice
-            random_choice = random.choice(valid_choices)
+            return selected_choices
+        except (ValueError, AttributeError):
+            # If no valid choice was made, pick random valid choices
+            random_choices = random.sample(valid_choices, min_choices)
             await self.observe(
                 BaseMessage(
                     type="Invalid input",
-                    message=f"Invalid choice. Randomly chose {random_choice}",
+                    message=f"Invalid choice. Randomly chose {random_choices}",
                 )
             )
-            return [random_choice]
-
-        return numbers
+            return random_choices
 
     async def prompt_with(self, prompt: str, should_think=False) -> str:
         raise NotImplementedError
