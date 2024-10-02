@@ -15,6 +15,10 @@ class BaseMessage(BaseEvent):
     username: str = "System"
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 
+    @property
+    def ai_friendly_message(self):
+        return self.message
+
 
 class GameConnectMessage(BaseMessage):
     type: Literal["game_connect"] = "game_connect"
@@ -41,6 +45,10 @@ class PhaseMessage(BaseMessage):
 
 class SpeechMessage(BaseMessage):
     type: Literal["speech"] = "speech"
+
+    @property
+    def ai_friendly_message(self):
+        return f"{self.username}: {self.message}"
 
 
 class PromptMessage(BaseMessage):

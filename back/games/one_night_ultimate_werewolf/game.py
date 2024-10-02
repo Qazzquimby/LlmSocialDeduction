@@ -154,9 +154,7 @@ class OneNightWerewolf(Game):
         voter_to_vote = {}
         vote_coroutines = []
         for player in self.state.players:
-            vote_coroutine = player.vote(
-                [p for p in self.state.players if p != player]
-            )
+            vote_coroutine = player.vote([p for p in self.state.players if p != player])
             vote_coroutines.append(vote_coroutine)
 
         votes = await asyncio.gather(*vote_coroutines)
