@@ -151,14 +151,19 @@ class OneNightWerewolf(Game):
             PhaseMessage(message="Beginning of voting phase", phase="voting"),
         )
 
-        votes = {}
+        voter_to_vote = {}
+        vote_coroutines = []
         for player in self.state.players:
-            voted_player = await player.vote(
+            vote_coroutine = player.vote(
                 [p for p in self.state.players if p != player]
             )
-            votes[player] = voted_player
+            vote_coroutines.append(vote_coroutine)
 
-        for player, voted_player in votes.items():
+        votes = await asyncio.gather(*vote_coroutines)
+        for player, voted_player in zip(self.state.players, votes):
+            voter_to_vote[player] = voted_player
+
+        for player, voted_player in voter_to_vote.items():
             await everyone_observe(
                 self.state.players,
                 BaseMessage(
@@ -168,7 +173,7 @@ class OneNightWerewolf(Game):
             )
 
         vote_count = {}
-        for voted_player in votes.values():
+        for voted_player in voter_to_vote.values():
             vote_count[voted_player] = vote_count.get(voted_player, 0) + 1
 
         max_votes = max(vote_count.values())
