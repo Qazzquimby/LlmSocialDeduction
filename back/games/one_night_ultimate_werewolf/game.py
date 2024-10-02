@@ -238,7 +238,7 @@ class OneNightWerewolf(Game):
         finally:
             logger.info(f"Game {self.id} ended")
             self.game_over = True
-            everyone_observe(
+            await everyone_observe(
                 players=self.state.players,
                 event=GameEndedMessage(message="The game has ended."),
             )
