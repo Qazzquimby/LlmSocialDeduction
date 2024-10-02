@@ -389,7 +389,7 @@
                 type: 'player_action',
                 player: username,
                 action: 'make_choice',
-                message: choices.join(' ')
+                message: selectedChoices.join(',')
             };
             ws.send(JSON.stringify(message));
             selectedChoices = [];
@@ -562,9 +562,9 @@
                                         Submit
                                     </Button>
                                 {:else}
-                                    {#each choices as [value, label]}
+                                    {#each choices as [value, label], index}
                                         <Button on:click={() => {
-                                            toggleChoice(value);
+                                            selectedChoices = [index];
                                             submitChoices();
                                         }}>
                                             {label}
