@@ -66,6 +66,9 @@ class WebSocketManager:
         except asyncio.TimeoutError:
             logger.warning(f"Got no input from {user_id}")
             return "(No response)"
+        except KeyError:
+            logger.warning(f"{user_id} disconnected before responding")
+            return "(Disconnected)"
 
     async def listen_on_connection(self, websocket: WebSocket, user_id: str):
         logger.info(f"listening to {user_id}")
