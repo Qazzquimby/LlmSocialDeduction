@@ -419,7 +419,6 @@
         }
         gameId = null;
         localStorage.removeItem('gameId');
-        isConnected = false;
         messages.set([]);
         gameState = null;
         choices = [];
@@ -590,6 +589,12 @@
                                     flex-grow
                                     disabled={timeLeft <= 0}
                                 />
+                            </div>
+                        {:else if $messages[$messages.length - 1]?.type === 'prompt' && $messages[$messages.length - 1].message.includes("Are you ready to start the night phase?")}
+                            <div>
+                                <Button on:click={() => submitChoices()}>
+                                    Start Night Phase
+                                </Button>
                             </div>
                         {:else}
                             <div italic text-gray-400>

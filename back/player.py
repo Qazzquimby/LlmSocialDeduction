@@ -217,6 +217,13 @@ class WebHumanPlayer(HumanPlayer):
     def update_activity(self):
         self.last_activity = time.time()
 
+    async def wait_for_ready(self):
+        ready_prompt = PromptMessage(
+            message="",
+            choices=[(1, "Start Game")],
+        )
+        await websocket_manager.get_input(self.user_id, ready_prompt, timeout=None)
+
 
 def get_rules(roles: List[Role]) -> str:
     rules = "Rules:\n"

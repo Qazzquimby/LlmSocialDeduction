@@ -54,12 +54,12 @@ class WebSocketManager:
         if user_id in self.message_queues:
             return await self.message_queues[user_id].get()
 
-    async def get_input(self, user_id: str, prompt: PromptMessage):
+    async def get_input(self, user_id: str, prompt: PromptMessage, timeout=90.0):
         await self.send_personal_message(prompt, user_id)
         logger.info(f"Waiting for input from {user_id}")
         try:
             user_input = await asyncio.wait_for(
-                self.message_queues[user_id].get(), timeout=90.0
+                self.message_queues[user_id].get(), timeout=timeout
             )
             logger.info(f"Got input from {user_id}: {user_input}")
             return user_input

@@ -18,7 +18,14 @@ from message_types import (
 )
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
-from player import Player, AIPlayer, WebHumanPlayer, LocalHumanPlayer, everyone_observe
+from player import (
+    Player,
+    AIPlayer,
+    WebHumanPlayer,
+    LocalHumanPlayer,
+    everyone_observe,
+    get_rules,
+)
 from message_types import BaseMessage
 from websocket_management import UserLogin
 
@@ -76,6 +83,12 @@ class OneNightWerewolf(Game):
             ),
         )
 
+        rules = get_rules(get_roles_in_game(len(self.state.players)))
+        await everyone_observe(
+            [p for p in self.state.players if isinstance(p, WebHumanPlayer)],
+            ObservationMessage(message=f"Game Rules:\n{rules}"),
+        )
+
         # Assign roles
         roles_in_game = get_roles_in_game(len(self.state.players))
         center_cards = await assign_roles(
@@ -96,6 +109,11 @@ class OneNightWerewolf(Game):
                     message=f"Your role's strategy: {player.role.get_strategy(self.state)}\n"
                 )
             )
+
+        # Wait for human players to be ready
+        human_players = [p for p in self.state.players if isinstance(p, WebHumanPlayer)]
+        if human_players:
+            await asyncio.gather(*[p.wait_for_ready() for p in human_players])
 
     async def play_night_phase(self) -> None:
         logger.info("Starting night phase")
