@@ -44,7 +44,7 @@ class WebSocketManager:
             except asyncio.TimeoutError:
                 raise RuntimeError(f"Timeout sending message to {user_id}. {message}")
         else:
-            raise RuntimeError(f"User {user_id} not connected")
+            logger.warning(f"User {user_id} not connected")
 
     async def broadcast(self, message: BaseEvent, users: List[str]):
         for user_id in users:

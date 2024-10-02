@@ -535,7 +535,7 @@
                     </div>
 
                     <div class="interaction-area" bg-dark-800 p-4 rounded mb-4>
-                        {#if currentSpeaker}
+                        {#if currentSpeaker && currentSpeaker !== username}
                             <div italic text-gray-400>
                                 {currentSpeaker} is typing...
                             </div>
@@ -569,7 +569,7 @@
                                     {/each}
                                 {/if}
                             </div>
-                        {:else if isPrompted}
+                        {:else if isPrompted || (currentSpeaker === username)}
                             <div flex="~ col" gap-2>
                                 <div flex items-center justify-between>
                                     <span>Time left: {timeLeft}s</span>
