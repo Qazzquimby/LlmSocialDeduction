@@ -317,22 +317,32 @@
     }
 
     let timeLeft = 90; // 90 seconds timeout
-    let timer: number = 0;
+    let timer: number | null = null;
 
     function startTimer() {
-        timeLeft = 90;
         if (timer) clearInterval(timer);
+        timeLeft = 90;
         timer = setInterval(() => {
             timeLeft--;
             if (timeLeft <= 0) {
                 clearInterval(timer);
+                timer = null;
                 sendMessage(true);
             }
         }, 1000);
     }
 
-    $: if (isPrompted && !timer) {
+    function stopTimer() {
+        if (timer) {
+            clearInterval(timer);
+            timer = null;
+        }
+    }
+
+    $: if (isPrompted) {
         startTimer();
+    } else {
+        stopTimer();
     }
 
     function sendMessage(timeout = false) {
@@ -347,7 +357,7 @@
             ws.send(JSON.stringify(message));
             newMessage = '';
             isPrompted = false;
-            clearInterval(timer);
+            stopTimer();
         }
     }
 
