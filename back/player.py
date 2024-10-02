@@ -97,7 +97,8 @@ class Player:
                 raise ValueError("Invalid number of choices")
 
             return selected_choices
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
+            logger.warning(e)
             # If no valid choice was made, pick random valid choices
             random_choices = random.sample(valid_choices, min_choices)
             await self.observe(
