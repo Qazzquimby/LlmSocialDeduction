@@ -272,7 +272,7 @@
                 players = msg.players;
             },
             'game_ended': (msg: GameEndedMessage) => {
-                gameState = 'Game ended';
+                gameState = null;
                 gameId = null;
                 localStorage.removeItem('gameId');
                 messages.update(msgs => [...msgs, msg]);
@@ -285,6 +285,7 @@
             'speech': (msg: SpeechMessage) => {
                 messages.update(msgs => [...msgs, msg as BaseMessage]);
                 currentSpeaker = null;
+                isPrompted = false;
             },
             'prompt': (msg: PromptMessage) => {
                 isPrompted = true;
@@ -293,21 +294,16 @@
                 minChoices = msg.min_choices;
                 maxChoices = msg.max_choices;
                 messages.update(msgs => [...msgs, msg as BaseMessage]);
+                currentSpeaker = null;
             },
             'next_speaker': (msg: NextSpeakerMessage) => {
                 currentSpeaker = msg.player;
                 console.log("New currentSpeaker", currentSpeaker);
-                if (currentSpeaker === username && chatInput) {
+                isPrompted = currentSpeaker === username;
+                if (isPrompted && chatInput) {
                     setTimeout(() => chatInput.focus(), 0);
                 }
             },
-            'game_ended': (msg: BaseMessage) => {
-                gameState = null;
-                gameId = null;
-                localStorage.removeItem('gameId');
-                messages.update(msgs => [...msgs, msg]);
-                toast(msg.message, {duration: 5000});
-            }
         };
 
         const handler = handlers[message.type];
@@ -333,6 +329,10 @@
                 sendMessage(true);
             }
         }, 1000);
+    }
+
+    $: if (isPrompted && !timer) {
+        startTimer();
     }
 
     function sendMessage(timeout = false) {
@@ -524,10 +524,40 @@
                         {/each}
                     </div>
 
-                    <div class="interaction-area" class:prompted={isPrompted} bg-dark-800 p-4 rounded mb-4>
+                    <div class="interaction-area" bg-dark-800 p-4 rounded mb-4>
                         {#if currentSpeaker}
                             <div italic text-gray-400>
                                 {currentSpeaker} is typing...
+                            </div>
+                        {:else if choices.length > 0}
+                            <div class="choices-container">
+                                <p>{$messages[$messages.length - 1].message}</p>
+                                {#if multipleChoices}
+                                    {#each choices as [value, label]}
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" 
+                                                   checked={selectedChoices.includes(value)}
+                                                   on:change={() => toggleChoice(value)}
+                                            />
+                                            {label}
+                                        </label>
+                                    {/each}
+                                    <Button
+                                        on:click={submitChoices}
+                                        disabled={!isValidSelection()}
+                                    >
+                                        Submit
+                                    </Button>
+                                {:else}
+                                    {#each choices as [value, label]}
+                                        <Button on:click={() => {
+                                            toggleChoice(value);
+                                            submitChoices();
+                                        }}>
+                                            {label}
+                                        </Button>
+                                    {/each}
+                                {/if}
                             </div>
                         {:else if isPrompted}
                             <div flex="~ col" gap-2>
@@ -536,43 +566,22 @@
                                     <Button on:click={sendMessage}>Send</Button>
                                 </div>
                                 <input
-                                        bind:value={newMessage}
-                                        bind:this={chatInput}
-                                        placeholder="Type a message"
-                                        on:keypress={(e) => e.key === 'Enter' && sendMessage()}
-                                        bg-dark-700
-                                        text-gray-100
-                                        border-gray-600
-                                        rounded
-                                        p-2
-                                        flex-grow
-                                        disabled={timeLeft <= 0}
+                                    bind:value={newMessage}
+                                    bind:this={chatInput}
+                                    placeholder="Type a message"
+                                    on:keypress={(e) => e.key === 'Enter' && sendMessage()}
+                                    bg-dark-700
+                                    text-gray-100
+                                    border-gray-600
+                                    rounded
+                                    p-2
+                                    flex-grow
+                                    disabled={timeLeft <= 0}
                                 />
                             </div>
                         {:else}
                             <div italic text-gray-400>
                                 Wheels are in motion...
-                            </div>
-                        {/if}
-                    </div>
-
-                    <div flex flex-wrap gap-2>
-                        {#if choices.length > 0}
-                            <div class="choices-container">
-                                <p>{$messages[$messages.length - 1].message}</p>
-                                {#each choices as [value, label]}
-                                    <div class:selected={selectedChoices.includes(value)}>
-                                        <Button on:click={() => toggleChoice(value)}>
-                                            {label}
-                                        </Button>
-                                    </div>
-                                {/each}
-                                <Button
-                                        on:click={submitChoices}
-                                        disabled={!isValidSelection()}
-                                >
-                                    Submit
-                                </Button>
                             </div>
                         {/if}
                     </div>

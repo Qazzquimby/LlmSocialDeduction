@@ -70,6 +70,10 @@ export interface PromptMessage {
   message: string;
   username?: string;
   timestamp?: string;
+  choices?: [unknown, unknown][] | null;
+  multiple?: boolean;
+  min_choices?: number;
+  max_choices?: number | null;
 }
 export interface RulesError {
   type?: "rules_error";

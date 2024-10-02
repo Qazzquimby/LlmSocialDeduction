@@ -10,7 +10,7 @@ buttons.
 
 Todo:
 
-- When its your turn to talk, chatbox shows "Human is typing..." rather than freeing the text box.
+- Timer starts empty when its your turn to talk, locking the text box.
 - Buttons should be in place of the text box. They should get a chatbox or buttons, not both.
 - If its choose single, they shouldnt need a submit button.
 - If its choose mulptiple it should be tickboxes with a submit button
