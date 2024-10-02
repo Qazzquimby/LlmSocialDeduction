@@ -394,6 +394,8 @@
             ws.send(JSON.stringify(message));
             selectedChoices = [];
             choices = []; // Clear choices immediately after submission
+            isPrompted = false; // Set isPrompted to false after submission
+            currentSpeaker = null; // Reset currentSpeaker
         }
     }
 
@@ -570,7 +572,7 @@
                                     {/each}
                                 {/if}
                             </div>
-                        {:else if isPrompted || (currentSpeaker === username)}
+                        {:else if isPrompted}
                             <div flex="~ col" gap-2>
                                 <div flex items-center justify-between>
                                     <span>Time left: {timeLeft}s</span>
