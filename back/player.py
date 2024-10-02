@@ -109,14 +109,17 @@ class Player:
         except (ValueError, AttributeError) as e:
             logger.warning(e)
             # If no valid choice was made, pick random valid choices
-            random_choices = random.sample(valid_choices, min_choices)
+            random_choice_numbers = random.sample(valid_choices, min_choices)
+            random_choice_names = [
+                choice[1] for choice in choices if choice[0] in random_choice_numbers
+            ]
             await self.observe(
                 BaseMessage(
                     type="Invalid input",
-                    message=f"Invalid choice. Randomly chose {random_choices}",
+                    message=f"Invalid choice. Randomly chose {random_choice_names}",
                 )
             )
-            return random_choices
+            return random_choice_numbers
 
     def make_choice_prompt(
         self, prompt, choices, choose_multiple, min_choices, max_choices
@@ -300,7 +303,7 @@ class AIPlayer(Player):
         for observation in self.observations:
             if isinstance(observation, BaseMessage):
                 litellm_prompt = litellm_prompt.add_message(
-                    observation.message, role="system"
+                    observation.ai_friendly_message, role="system"
                 )
             else:
                 litellm_prompt = litellm_prompt.add_message(
