@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, Depends
+from fastapi import FastAPI, WebSocket, Depends, BackgroundTasks
 from starlette.middleware.cors import CORSMiddleware
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 import asyncio
@@ -151,15 +151,16 @@ async def websocket_endpoint(
 @app.post("/start_game")
 async def start_game(
     user_login: UserLogin,
+    background_tasks: BackgroundTasks,
     server_state: ServerState = Depends(get_server_state),
 ):
-    user_id = user_login.user_id
     game_manager = await server_state.setup_new_game(login=user_login)
 
-    asyncio.create_task(
-        game_manager.game.play_game(),
-        name=f"play_game, {game_manager.game.id}",
-    )
+    background_tasks.add_task(game_manager.game.play_game)
+    # asyncio.create_task(
+    #     game_manager.game.play_game(),
+    #     name=f"play_game, {game_manager.game.id}",
+    # )
 
     return {"gameId": game_manager.game.id}
 
