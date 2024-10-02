@@ -408,7 +408,7 @@
     }
 
     function leaveGame() {
-        if (!isGameEnded && ws && isConnected) {
+        if (ws && isConnected) {
             const message = {
                 type: 'player_action',
                 player: username,

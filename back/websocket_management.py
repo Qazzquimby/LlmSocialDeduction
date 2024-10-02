@@ -70,20 +70,31 @@ class WebSocketManager:
             logger.warning(f"{user_id} disconnected before responding")
             return "(Disconnected)"
 
-    async def listen_on_connection(self, websocket: WebSocket, user_id: str):
+    async def listen_on_connection(
+        self, websocket: WebSocket, user_id: str, server_state
+    ):
         logger.info(f"listening to {user_id}")
         try:
             while True:
                 data = await websocket.receive_json()
-                if "type" in data:
+                if "type" in data and data["type"] == "player_action":
                     if data["action"] == "leave_game":
-                        self.disconnect(user_id)
+                        await self.handle_leave_game(user_id, server_state)
                         return
 
                 await self.message_queues[user_id].put(data["message"])
         except WebSocketDisconnect:
             logger.info(f"User {user_id} disconnected")
             self.disconnect(user_id)
+
+    async def handle_leave_game(self, user_id: str, server_state):
+        for game_id, game_manager in list(server_state.game_id_to_game_manager.items()):
+            if game_manager.has_player(user_id):
+                game_manager.remove_player(user_id)
+                if not game_manager.players:
+                    del server_state.game_id_to_game_manager[game_id]
+                break
+        self.disconnect(user_id)
 
     async def resume_game(self, user_id: str, game_id: str, web_human_player):
         await self.send_personal_message(

@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, Depends, BackgroundTasks
 from starlette.middleware.cors import CORSMiddleware
+from starlette.websockets import WebSocketDisconnect
+
 from games.one_night_ultimate_werewolf.game import OneNightWerewolf
 import asyncio
 from loguru import logger
@@ -50,6 +52,12 @@ class GameManager:
 
     def get_web_human_player(self, user_id: UserID):
         return next((p for p in self.web_players if p.user_id == user_id), None)
+
+    def remove_player(self, user_id: UserID):
+        player = self.get_web_human_player(user_id)
+        if player:
+            self.game.state.players.remove(player)
+            logger.info(f"Removed player {user_id} from game {self.game.id}")
 
     async def end_game(self):
         for player in self.web_players:
@@ -145,7 +153,11 @@ async def websocket_endpoint(
             user_id,
         )
 
-    await websocket_manager.listen_on_connection(websocket, user_id)
+    try:
+        await websocket_manager.listen_on_connection(websocket, user_id, server_state)
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected for user {user_id}")
+        await websocket_manager.disconnect(user_id)
 
 
 @app.post("/start_game")
