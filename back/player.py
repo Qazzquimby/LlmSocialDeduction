@@ -75,21 +75,30 @@ class Player:
         min_choices=1,
         max_choices=None,
     ) -> List[int]:
-        prompt_message = PromptMessage(
-            message=prompt,
+        prompt_message = self.make_choice_prompt(
+            prompt=prompt,
             choices=choices,
-            multiple=choose_multiple,
+            choose_multiple=choose_multiple,
             min_choices=min_choices,
             max_choices=max_choices,
         )
         response = await self.prompt_with(prompt_message, should_think=True)
 
-        valid_choices = list(range(len(choices)))
+        valid_choices = [choice[0] for choice in choices]
         try:
-            selected_choices = [int(choice) for choice in response.split(",")]
-            selected_choices = [
-                choice for choice in selected_choices if choice in valid_choices
-            ]
+            formatted_answer = response.split("{")[-1]
+            words = (
+                formatted_answer.replace(",", " ")
+                .replace('"', " ")
+                .replace("'", " ")
+                .replace(".", " ")
+                .replace("*", " ")
+                .replace(":", " ")
+                .replace("}", " ")
+                .split(" ")
+            )
+            numbers = [int(word) for word in words if word.isnumeric()]
+            selected_choices = [num for num in numbers if num in valid_choices]
 
             if len(selected_choices) < min_choices or (
                 max_choices and len(selected_choices) > max_choices
@@ -108,6 +117,17 @@ class Player:
                 )
             )
             return random_choices
+
+    def make_choice_prompt(
+        self, prompt, choices, choose_multiple, min_choices, max_choices
+    ):
+        return PromptMessage(
+            message=prompt,
+            choices=choices,
+            multiple=choose_multiple,
+            min_choices=min_choices,
+            max_choices=max_choices,
+        )
 
     async def prompt_with(
         self, prompt: Union[str, PromptMessage], should_think=False
@@ -355,6 +375,24 @@ class AIPlayer(Player):
 
     def mock_api_response(self, litellm_prompt: Prompt) -> str:
         return f"Mock response."
+
+    def make_choice_prompt(
+        self, prompt, choices, choose_multiple, min_choices, max_choices
+    ):
+        choice_prompt = prompt + "\n"
+
+        if choose_multiple:
+            choice_prompt += "\nYour final answer must take the form {choice_numbers, choice names}, eg {1 3, Bob Clyde}."
+        else:
+            choice_prompt += "\nYour final answer must take the form {choice_number, choice name}, eg {1, Bob}."
+
+        return PromptMessage(
+            message=choice_prompt,
+            choices=choices,
+            multiple=choose_multiple,
+            min_choices=min_choices,
+            max_choices=max_choices,
+        )
 
 
 async def everyone_observe(players: List[Player], event: BaseEvent):
