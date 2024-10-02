@@ -136,7 +136,7 @@ class OneNightWerewolf(Game):
 
             for speaker in self.state.players:
                 await everyone_observe(
-                    self.state.players,
+                    [p for p in self.state.players if isinstance(p, WebHumanPlayer)],
                     NextSpeakerMessage(player=speaker.name),
                 )
                 message = await speaker.speak()
