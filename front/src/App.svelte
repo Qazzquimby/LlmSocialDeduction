@@ -393,6 +393,7 @@
             };
             ws.send(JSON.stringify(message));
             selectedChoices = [];
+            choices = []; // Clear choices immediately after submission
         }
     }
 
@@ -441,10 +442,8 @@
     let isScrolledToBottom = true;
 
     function scrollToBottom() {
-        if (messageContainer && isScrolledToBottom) {
-            setTimeout(() => {
-                messageContainer.scrollTop = messageContainer.scrollHeight;
-            }, 0);
+        if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
         }
     }
 
@@ -455,8 +454,8 @@
         }
     }
 
-    $: if (messageContainer) {
-        scrollToBottom();
+    $: if ($messages.length) {
+        setTimeout(scrollToBottom, 0);
     }
 
 </script>
@@ -513,7 +512,7 @@
                     </div>
 
                     <div bind:this={messageContainer} on:scroll={handleScroll} flex-grow overflow-y-auto bg-dark-800
-                         rounded p-4 mb-4>
+                         rounded p-4 mb-4 style="scroll-behavior: smooth;">
                         {#each $messages as {type, username, message, timestamp}, i}
                             {#if username && type === "speech"}
                                 <div class="message"
