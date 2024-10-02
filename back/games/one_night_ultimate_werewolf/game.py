@@ -14,6 +14,7 @@ from message_types import (
     SpeechMessage,
     PlayerActionMessage,
     NextSpeakerMessage,
+    GameEndedMessage,
 )
 from model_performance import performance_tracker
 from ai_personalities import PERSONALITIES
@@ -236,6 +237,11 @@ class OneNightWerewolf(Game):
             print("\n--- Game Over ---")
         finally:
             logger.info(f"Game {self.id} ended")
+            self.game_over = True
+            everyone_observe(
+                players=self.state.players,
+                event=GameEndedMessage(message="The game has ended."),
+            )
 
     def get_key(self):
         """Returns the key of a random player. Intended to fairly distribute costs to present players."""

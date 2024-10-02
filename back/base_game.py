@@ -12,6 +12,7 @@ class Game:
         self.state: GameState = GameState(num_players)
 
         self.id = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        self.game_over = False
 
     def setup_game(self) -> None:
         raise NotImplementedError("Subclasses must implement setup_game method")

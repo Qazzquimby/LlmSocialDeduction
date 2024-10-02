@@ -36,7 +36,6 @@ class GameManager:
 
     def __init__(self, game: OneNightWerewolf):
         self.game: OneNightWerewolf = game
-        self.game_over = False
 
     def has_player(self, user_id: UserID):
         return user_id in [p.user_id for p in self.web_players]
@@ -58,7 +57,7 @@ class GameManager:
                 BaseMessage(type="game_ended", message="Game ended due to inactivity"),
                 player.user_id,
             )
-        self.game_over = True
+        self.game.game_over = True
         logger.info("Game ended due to inactivity")
 
 
@@ -111,7 +110,7 @@ async def websocket_endpoint(
     found_game_with_player = False
     for game_id, game_manager in list(server_state.game_id_to_game_manager.items()):
         if game_manager.has_player(user_id):
-            if game_manager.game_over:
+            if game_manager.game.game_over:
                 # Remove the game that's no longer running
                 del server_state.game_id_to_game_manager[game_id]
                 await websocket_manager.send_personal_message(

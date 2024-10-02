@@ -380,7 +380,7 @@
                 type: 'player_action',
                 player: username,
                 action: 'make_choice',
-                choices: selectedChoices
+                message: choices.join(' ')
             };
             ws.send(JSON.stringify(message));
             selectedChoices = [];

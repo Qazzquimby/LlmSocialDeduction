@@ -10,6 +10,8 @@ buttons.
 
 Todo:
 
-- When an invalid input is entered, we should pick a random valid action rather than doing nothing.
-- If a webplayer doesn't enter a message in time, they still have their textbox. Not sure whats good UX here. It doesn't show their time limit or anything.
-- When its the user's turn to speak, if they refresh (disconnect reconnect) they aren't given the chat bar to enter text.
+- When its your turn to talk, chatbox shows "Human is typing..." rather than freeing the text box.
+- Buttons should be in place of the text box. They should get a chatbox or buttons, not both.
+- If its choose single, they shouldnt need a submit button.
+- If its choose mulptiple it should be tickboxes with a submit button
+- Speech timer doesn't count down.
