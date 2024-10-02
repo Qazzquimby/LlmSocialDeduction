@@ -84,8 +84,8 @@ class Player:
         )
         response = await self.prompt_with(prompt_message, should_think=True)
 
+        valid_choices = list(range(len(choices)))
         try:
-            valid_choices = list(range(len(choices)))
             selected_choices = [int(choice) for choice in response.split(",")]
             selected_choices = [
                 choice for choice in selected_choices if choice in valid_choices
