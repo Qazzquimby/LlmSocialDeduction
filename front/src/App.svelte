@@ -29,6 +29,7 @@
     let prevGameId: string | null = null;
     let isPrompted = false;
     let currentSpeaker: string | null = null;
+    let isGameEnded = false;
 
     let players: string[] = [];
     let apiKey: string | null = null;
@@ -272,9 +273,7 @@
                 players = msg.players;
             },
             'game_ended': (msg: GameEndedMessage) => {
-                gameState = null;
-                gameId = null;
-                localStorage.removeItem('gameId');
+                gameState = 'Game ended';
                 messages.update(msgs => [...msgs, msg]);
                 toast(msg.message, {duration: 5000});
             },
@@ -409,7 +408,7 @@
     }
 
     function leaveGame() {
-        if (ws && isConnected) {
+        if (!isGameEnded && ws && isConnected) {
             const message = {
                 type: 'player_action',
                 player: username,
@@ -420,10 +419,11 @@
         gameId = null;
         localStorage.removeItem('gameId');
         isConnected = false;
-        messages.set([])
+        messages.set([]);
         gameState = null;
         choices = [];
         players = [];
+        isGameEnded = false;
         if (ws) {
             ws.close();
         }
@@ -503,9 +503,12 @@
             </div>
             {#if gameId}
                 <div w-full flex="~ col" h-full min-h-0>
-                    <div mb-4 flex-shrink-0>
+                    <div mb-4 flex-shrink-0 flex justify-between items-center>
                         {#if gameState}
                             <p bg-dark-800 p-2 rounded text-lg capitalize>{gameState}</p>
+                        {/if}
+                        {#if isGameEnded}
+                            <Button on:click={leaveGame}>Exit Game</Button>
                         {/if}
                     </div>
 
