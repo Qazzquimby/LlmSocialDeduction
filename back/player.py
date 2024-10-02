@@ -174,10 +174,16 @@ class WebHumanPlayer(HumanPlayer):
         self.last_activity = time.time()
 
     async def prompt_with(
-        self, prompt: str, should_think=False, params: dict = None
+        self, prompt: Union[str, PromptMessage], should_think=False, params: dict = None
     ) -> str:
-        logger.info(f"prompting {self.login.name} with {prompt[:20]}")
-        prompt_event = PromptMessage(message=prompt, username="System")
+        if isinstance(prompt, PromptMessage):
+            prompt_text = prompt.text
+            prompt_event = prompt
+        else:
+            prompt_text = prompt
+            prompt_event = PromptMessage(message=prompt, username="System")
+
+        logger.info(f"prompting {self.login.name} with {prompt_text[:20]}")
         return await websocket_manager.get_input(self.user_id, prompt_event)
 
     async def print(self, event: BaseEvent):
