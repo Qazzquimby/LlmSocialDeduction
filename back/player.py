@@ -1,6 +1,6 @@
 import asyncio
 import random
-from typing import Optional, TYPE_CHECKING, Tuple
+from typing import Optional, TYPE_CHECKING, Tuple, Union
 
 from loguru import logger
 
@@ -9,6 +9,7 @@ from message_types import (
     BaseMessage,
     PlayerActionMessage,
     RulesError,
+    PromptMessage,
 )
 from typing import List
 from core import Prompt
@@ -84,8 +85,8 @@ class Player:
         response = await self.prompt_with(prompt_message, should_think=True)
 
         try:
-            selected_choices = [int(choice) for choice in response.split(",")]
             valid_choices = list(range(len(choices)))
+            selected_choices = [int(choice) for choice in response.split(",")]
             selected_choices = [
                 choice for choice in selected_choices if choice in valid_choices
             ]
@@ -107,7 +108,9 @@ class Player:
             )
             return random_choices
 
-    async def prompt_with(self, prompt: str, should_think=False) -> str:
+    async def prompt_with(
+        self, prompt: Union[str, PromptMessage], should_think=False
+    ) -> str:
         raise NotImplementedError
 
     async def observe(self, event: BaseEvent):
@@ -138,22 +141,24 @@ class HumanPlayer(Player):
         raise NotImplementedError
 
     async def prompt_with(
-        self, prompt: str, should_think=False, params: dict = None
+        self, prompt: Union[str, PromptMessage], should_think=False, params: dict = None
     ) -> str:
         raise NotImplementedError
 
 
 class LocalHumanPlayer(HumanPlayer):
     async def prompt_with(
-        self, prompt: str, should_think=False, params: dict = None
+        self, prompt: Union[str, PromptMessage], should_think=False, params: dict = None
     ) -> str:
-        return await ainput(prompt)
+        if isinstance(prompt, PromptMessage):
+            prompt_text = prompt.text
+        else:
+            prompt_text = prompt
+        return await ainput(prompt_text)
 
     async def print(self, event: BaseEvent):
         if isinstance(event, BaseMessage):
             print(event.message)
-        else:
-            print(f"Event: {event.type}")
 
 
 import time
@@ -251,7 +256,10 @@ class AIPlayer(Player):
         return f"{message_to_broadcast}"
 
     async def prompt_with(
-        self, prompt: str, should_think=False, should_rules_check=False
+        self,
+        prompt: Union[str, PromptMessage],
+        should_think=False,
+        should_rules_check=False,
     ) -> str:
         litellm_prompt = Prompt().add_message(
             f"You're playing a social deduction game. Your name is {self.name}",
@@ -272,16 +280,21 @@ class AIPlayer(Player):
                     str(observation.model_dump()), role="system"
                 )
 
-        if should_think:
-            prompt = self.think_prompt + prompt
+        if isinstance(prompt, PromptMessage):
+            prompt_text = prompt.text
+        else:
+            prompt_text = prompt
 
-        litellm_prompt = litellm_prompt.add_message(prompt, role="system")
+        if should_think:
+            prompt_text = self.think_prompt + prompt_text
+
+        litellm_prompt = litellm_prompt.add_message(prompt_text, role="system")
         response = await self.prompt_model(litellm_prompt)
 
         await self.observe(
             BaseMessage(
                 type="my_action",
-                message=f"I was asked: {prompt}\n\n I responded: {response}\n\n\n",
+                message=f"I was asked: {prompt_text}\n\n I responded: {response}\n\n\n",
             )
         )
 

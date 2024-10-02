@@ -50,6 +50,17 @@ class PromptMessage(BaseMessage):
     min_choices: int = 1
     max_choices: Optional[int] = None
 
+    @property
+    def text(self):
+        prompt_text = self.message
+        if self.choices:
+            prompt_text += "\nChoices:\n" + "\n".join(
+                [f"{i}: {choice}" for i, choice in self.choices]
+            )
+        if self.multiple:
+            prompt_text += f"\nYou can select multiple choices (min: {self.min_choices}, max: {self.max_choices or 'unlimited'})."
+        return prompt_text
+
 
 class NextSpeakerMessage(BaseEvent):
     type: Literal["next_speaker"] = "next_speaker"
