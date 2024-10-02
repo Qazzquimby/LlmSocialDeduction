@@ -665,6 +665,7 @@
         margin-bottom: 8px;
         font-style: italic;
         color: #a0aec0;
+        white-space: pre-wrap;
     }
 
     .first-message {

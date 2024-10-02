@@ -25,5 +25,3 @@ Human connects many times at once in logs. On disconnecting they all disconnect.
 Refreshing while server is waiting for player to start the game removes the start game prompt.
 
 After performing night action it displayed the text box and timer. Same after voting, maybe after any button submission.
-
-rules missing whitespace
