@@ -208,7 +208,7 @@ class OneNightWerewolf(Game):
             await everyone_observe(
                 self.state.players,
                 PlayerActionMessage(
-                    message=f"{player.name} was {player.role.name}.",
+                    message=f"{player.name} started as {player.original_role.name} and ended as {player.role.name}.",
                     player=player.name,
                     action="reveal_role",
                 ),
