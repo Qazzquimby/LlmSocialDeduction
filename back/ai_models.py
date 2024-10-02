@@ -1,7 +1,9 @@
 import random
 
 models = [
-    "openrouter/meta-llama/llama-3.1-8b-instruct:free",
+    "openrouter/openai/gpt-4o",
+    "openrouter/openai/gpt-4o-mini",
+    # "openrouter/meta-llama/llama-3.1-8b-instruct:free",
     # "openrouter/nousresearch/hermes-3-llama-3.1-405b:free", # broke?
     # "openrouter/meta-llama/llama-3.1-405b-instruct",
     # "gpt-4o-2024-08-06",
