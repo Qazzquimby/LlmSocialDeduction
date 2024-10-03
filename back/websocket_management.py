@@ -54,7 +54,7 @@ class WebSocketManager:
         if user_id in self.message_queues:
             return await self.message_queues[user_id].get()
 
-    async def get_input(self, user_id: str, prompt: PromptMessage, timeout=90.0):
+    async def get_input(self, user_id: str, prompt: PromptMessage, timeout=3 * 60.0):
         await self.send_personal_message(prompt, user_id)
         logger.info(f"Waiting for input from {user_id}")
         try:

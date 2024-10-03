@@ -315,7 +315,7 @@
         }
     }
 
-    let timeLeft = 90; // 90 seconds timeout
+    let timeLeft = 3*60; // 90 seconds timeout
     let timer: number | null = null;
 
     function startTimer() {
