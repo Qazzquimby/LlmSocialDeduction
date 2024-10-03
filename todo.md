@@ -10,6 +10,10 @@ buttons.
 
 Todo:
 
+# AI:
+Do rules error checking before sending and allow them to change their answer
+
+Optimize message history to shorten. Eg remove their past speechs from history since they already see the my_action event
 
 # Unconfirmed:
 On a ws reconnect, the server somehow got a message from Human which I didn't write. It was a duplicate of the previous message.
