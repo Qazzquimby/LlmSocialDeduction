@@ -5,7 +5,7 @@
   # Directory to publish (relative to base)
   publish = "dist"
   # Default build command
-  command = "yarn run build"
+  command = "yarn build"
 
 # Redirects and headers are optional
 [[redirects]]
