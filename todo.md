@@ -15,6 +15,15 @@ Do rules error checking before sending and allow them to change their answer
 
 Optimize message history to shorten. Eg remove their past speechs from history since they already see the my_action event
 
+# Nice things
+Folding sections, to hide rules.
+
+Nice formatting on the rules stuff, less of a wall of text. Organize it.
+
+Let the user see the AI's thought processes post game.
+
+Let user chat with the AI's post game.
+
 # Unconfirmed:
 On a ws reconnect, the server somehow got a message from Human which I didn't write. It was a duplicate of the previous message.
 2024-10-02 13:24:51.231 | INFO     | player:print:211 - informing Human with type='next_speaker' player='Robby'
