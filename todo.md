@@ -19,8 +19,6 @@ Do rules error checking before sending and allow them to change their answer
 # Nice things
 Nice formatting on the rules stuff, less of a wall of text. Organize it.
 
-Let user chat with the AI's post game.
-
 Let the user see the AI's thought processes post game.
 
 Folding sections, to hide rules.

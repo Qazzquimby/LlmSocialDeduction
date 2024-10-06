@@ -1,2 +1,2 @@
 To update backend run
-flyctl deploy
+in back, flyctl deploy

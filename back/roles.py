@@ -34,7 +34,7 @@ class Role:
         for line in self.get_interaction_strategy_lines():
             if line.other_role in game_state.role_pool:
                 interaction_lines.append(line.interaction)
-        strategy += "\n".join(interaction_lines)
+        strategy += "\n" + "\n".join(interaction_lines)
 
         return strategy
 
