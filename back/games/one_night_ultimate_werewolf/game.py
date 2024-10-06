@@ -87,7 +87,7 @@ class OneNightWerewolf(Game):
         rules = get_rules(get_roles_in_game(len(self.state.players)))
         await everyone_observe(
             [p for p in self.state.players if isinstance(p, WebHumanPlayer)],
-            ObservationMessage(message=f"rules"),
+            ObservationMessage(message=rules),
         )
 
         # Assign roles
