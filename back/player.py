@@ -54,7 +54,7 @@ class Player:
             return action_result
         return None
 
-    async def speak(self) -> str:
+    async def speak(self, chat=False) -> str:
         raise NotImplementedError
 
     async def vote(self, players: List["Player"]) -> "Player":
@@ -151,10 +151,11 @@ class HumanPlayer(Player):
     async def set_role(self, role: Role) -> None:
         await super().set_role(role)
 
-    async def speak(self) -> str:
-        message = await self.prompt_with(
-            "What would you like to say to the other players?"
-        )
+    async def speak(self, chat=False) -> str:
+        prompt = "What would you like to say to the other players?"
+        if chat:
+            prompt += " This is post game chat."
+        message = await self.prompt_with(prompt)
         return f"{message}"
 
     async def observe(self, event: BaseEvent):
@@ -279,15 +280,21 @@ class AIPlayer(Player):
 
         self.use_mock_api = os.environ.get("USE_MOCK_API", "false").lower() == "true"
 
-    async def speak(self) -> str:
+    async def speak(self, chat=False) -> str:
         prompt = ""
         if self.personality:
             prompt += f"\nYour personality is: {self.personality} Don't over do it, focus on the game.\n"
-        prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Be intentional about what you share - don't self incriminate. Try to *accomplish* something with your message, don't pass or be scared of risk. Other players will expect you to tell your role and observations and you will look suspicious if you don't. If you say you're a role, they'll expect you to have the information that role would have. If you say you have information, they will expect your role to back it up. Don't say you have a hunch or feeling, make claims."
 
-        response = await self.prompt_with(
-            prompt, should_think=True, should_rules_check=True
-        )
+        if chat:
+            prompt += "What would you like to say to the other players? This is just post game chat, there's no more need to hide or be deceptive."
+            response = await self.prompt_with(
+                prompt, should_think=False, should_rules_check=False
+            )
+        else:
+            prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Be intentional about what you share - don't self incriminate. Try to *accomplish* something with your message, don't pass or be scared of risk. Other players will expect you to tell your role and observations and you will look suspicious if you don't. If you say you're a role, they'll expect you to have the information that role would have. If you say you have information, they will expect your role to back it up. Don't say you have a hunch or feeling, make claims."
+            response = await self.prompt_with(
+                prompt, should_think=True, should_rules_check=True
+            )
         message_to_broadcast = response.split("{")[-1]
         message_to_broadcast = message_to_broadcast.replace("}", "")
         return f"{message_to_broadcast}"

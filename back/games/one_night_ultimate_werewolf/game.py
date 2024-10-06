@@ -25,9 +25,10 @@ from player import (
     LocalHumanPlayer,
     everyone_observe,
     get_rules,
+    HumanPlayer,
 )
 from message_types import BaseMessage
-from websocket_management import UserLogin
+from websocket_management import UserLogin, DISCONNECTED_MESSAGE, NO_RESPONSE_MESSAGE
 
 from base_game import Game
 
@@ -242,6 +243,63 @@ class OneNightWerewolf(Game):
                 )
         performance_tracker.save_performance_data()
 
+    async def chat(self) -> None:
+        await everyone_observe(
+            self.state.players,
+            PhaseMessage(
+                message="Game is over. Post game chat.", phase="post game chat"
+            ),
+        )
+
+        human_players_in_chat = [p for p in self.state.players if isinstance(p, HumanPlayer)]
+        ai_players = [p for p in self.state.players if not isinstance(p, HumanPlayer)]
+        ai_names = [p.name for p in ai_players]
+
+        for i in range(5):
+            for human in human_players_in_chat:
+                message = await human.speak(chat=True)
+                await everyone_observe(
+                    self.state.players,
+                    SpeechMessage(message=message, username=human.name),
+                )
+
+                if message in (NO_RESPONSE_MESSAGE, DISCONNECTED_MESSAGE):
+                    human_players_in_chat.remove(human)
+                    break
+
+                mentioned_names = [
+                    name for name in ai_names if name.lower() in message.lower()
+                ]
+                if mentioned_names:
+                    ais_to_speak = [
+                        p for p in ai_players if p.name.lower() in mentioned_names
+                    ]
+                else:
+                    ais_to_speak = ai_players
+
+                for ai_to_speak in ais_to_speak:
+                    await everyone_observe(
+                        [
+                            p
+                            for p in self.state.players
+                            if isinstance(p, WebHumanPlayer)
+                        ],
+                        NextSpeakerMessage(player=ai_to_speak.name),
+                    )
+                    message = await ai_to_speak.speak()
+                    await everyone_observe(
+                        self.state.players,
+                        SpeechMessage(message=message, username=ai_to_speak.name),
+                    )
+
+        await everyone_observe(
+            human_players_in_chat,
+            BaseMessage(
+                type="warn",
+                message="Sorry, cutting off conversation here in case this is an unintentional loop, to avoid high charges",
+            ),
+        )
+
     async def play_game(self) -> None:
         try:
             await self.setup_game()
@@ -249,19 +307,20 @@ class OneNightWerewolf(Game):
             await self.play_day_phase()
             executed_players = await self.voting_phase()
             await self.check_win_condition(executed_players)
+            await self.chat()
 
-            total_cost = 0
-            for player in self.state.players:
-                if isinstance(player, AIPlayer):
-                    total_cost += player.total_cost
-            print(f"Total cost: {total_cost:.2f} USD")
-            print("\n--- Game Over ---")
+            # total_cost = 0
+            # for player in self.state.players:
+            #     if isinstance(player, AIPlayer):
+            #         total_cost += player.total_cost
+            # print(f"Total cost: {total_cost:.2f} USD") #todo make accurate somehow
+
         finally:
             logger.info(f"Game {self.id} ended")
             self.game_over = True
             await everyone_observe(
                 players=self.state.players,
-                event=GameEndedMessage(message="The game has ended."),
+                event=GameEndedMessage(message="The game server shut down."),
             )
 
     def get_key(self):

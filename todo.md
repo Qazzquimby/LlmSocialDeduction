@@ -11,18 +11,19 @@ buttons.
 Todo:
 
 # AI:
-Do rules error checking before sending and allow them to change their answer
-
 Optimize message history to shorten. Eg remove their past speechs from history since they already see the my_action event
 
-# Nice things
-Folding sections, to hide rules.
+Do rules error checking before sending and allow them to change their answer
 
+
+# Nice things
 Nice formatting on the rules stuff, less of a wall of text. Organize it.
+
+Let user chat with the AI's post game.
 
 Let the user see the AI's thought processes post game.
 
-Let user chat with the AI's post game.
+Folding sections, to hide rules.
 
 # Unconfirmed:
 On a ws reconnect, the server somehow got a message from Human which I didn't write. It was a duplicate of the previous message.

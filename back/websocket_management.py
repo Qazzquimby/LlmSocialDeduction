@@ -18,6 +18,10 @@ class UserLogin(BaseModel):
         return hashlib.sha256(self.api_key.encode()).hexdigest()[:16]
 
 
+NO_RESPONSE_MESSAGE = "(No response)"
+DISCONNECTED_MESSAGE = "(Disconnected)"
+
+
 class WebSocketManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
@@ -65,10 +69,10 @@ class WebSocketManager:
             return user_input
         except asyncio.TimeoutError:
             logger.warning(f"Got no input from {user_id}")
-            return "(No response)"
+            return NO_RESPONSE_MESSAGE
         except KeyError:
             logger.warning(f"{user_id} disconnected before responding")
-            return "(Disconnected)"
+            return DISCONNECTED_MESSAGE
 
     async def listen_on_connection(
         self, websocket: WebSocket, user_id: str, server_state
