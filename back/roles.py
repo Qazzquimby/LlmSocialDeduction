@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from game_state import GameState
     from player import Player
 
+
 @dataclass
 class RoleInteraction:
     other_role: "Role"
@@ -15,13 +16,18 @@ class Role:
     def __init__(self, name: str):
         self.name: str = name
 
-    async def night_action(self, player: 'Player', game_state: 'GameState') -> Optional[str]:
+    async def night_action(
+        self, player: "Player", game_state: "GameState"
+    ) -> Optional[str]:
         return None
 
     def get_rules(self) -> str:
+        return f"*{self.name}*: {self.get_inner_rules()}"
+
+    def get_inner_rules(self) -> str:
         raise NotImplementedError
 
-    def get_strategy(self, game_state: 'GameState') -> str:
+    def get_strategy(self, game_state: "GameState") -> str:
         strategy = "\n".join(self.get_general_strategy_lines())
 
         interaction_lines = []
@@ -35,10 +41,12 @@ class Role:
     def get_general_strategy_lines(self) -> List[str]:
         raise NotImplementedError
 
-    def get_interaction_strategy_lines(self)-> List[RoleInteraction]:
+    def get_interaction_strategy_lines(self) -> List[RoleInteraction]:
         return []
 
-    def did_win(self, player: 'Player', executed_players: List['Player'], werewolves_exist: bool) -> bool:
+    def did_win(
+        self, player: "Player", executed_players: List["Player"], werewolves_exist: bool
+    ) -> bool:
         raise NotImplementedError
 
     def __str__(self):

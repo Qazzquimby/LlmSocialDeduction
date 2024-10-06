@@ -87,7 +87,7 @@ class OneNightWerewolf(Game):
         rules = get_rules(get_roles_in_game(len(self.state.players)))
         await everyone_observe(
             [p for p in self.state.players if isinstance(p, WebHumanPlayer)],
-            ObservationMessage(message=f"Game Rules:\n{rules}"),
+            ObservationMessage(message=f"rules"),
         )
 
         # Assign roles
@@ -251,7 +251,9 @@ class OneNightWerewolf(Game):
             ),
         )
 
-        human_players_in_chat = [p for p in self.state.players if isinstance(p, HumanPlayer)]
+        human_players_in_chat = [
+            p for p in self.state.players if isinstance(p, HumanPlayer)
+        ]
         ai_players = [p for p in self.state.players if not isinstance(p, HumanPlayer)]
         ai_names = [p.name for p in ai_players]
 
@@ -271,9 +273,7 @@ class OneNightWerewolf(Game):
                     name for name in ai_names if name.lower() in message.lower()
                 ]
                 if mentioned_names:
-                    ais_to_speak = [
-                        p for p in ai_players if p.name.lower() in mentioned_names
-                    ]
+                    ais_to_speak = [p for p in ai_players if p.name in mentioned_names]
                 else:
                     ais_to_speak = ai_players
 

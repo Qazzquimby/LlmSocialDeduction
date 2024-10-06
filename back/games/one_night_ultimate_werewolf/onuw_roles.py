@@ -32,7 +32,7 @@ class Werewolf(ONUWRole):
             random_center_card = random.choice(game_state.center_cards)
             return f"You see there is no other Werewolf. You see a {random_center_card.name} in the center."
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "Werewolves will see the identities of other werewolves during the night phase. If there are no other werewolves, they see a random center card. They win if no Werewolf is executed."
 
     def did_win(
@@ -77,7 +77,7 @@ class Villager(ONUWRole):
     def __init__(self):
         super().__init__("Villager")
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "The Villager has no special abilities."
 
     def did_win(
@@ -120,7 +120,7 @@ class Seer(ONUWRole):
             target = players[choice[0] - 1]
             return f"You see that {target.name}'s role is: {target.role.name}"
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "During the night, the seer can either see the role of another player, or see *two* of the unused center cards."
 
     def did_win(
@@ -161,7 +161,7 @@ class Robber(ONUWRole):
         player.role, target.role = target.role, player.role
         return f"You swapped roles with {target.name}. Your new role is: {player.role.name}"
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "During the night, the Robber may swap their card with another player's card and see what their new card is. The other player won't know their card changed."
 
     def did_win(
@@ -200,7 +200,7 @@ class Troublemaker(ONUWRole):
         player1.role, player2.role = player2.role, player1.role
         return f"You swapped the roles of {player1.name} and {player2.name}."
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "The Troublemaker may swap two other players' cards without seeing them during the night phase."
 
     def did_win(
@@ -225,7 +225,7 @@ class Tanner(ONUWRole):
     def __init__(self):
         super().__init__("Tanner")
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "The Tanner wins if they are executed. They lose in all other scenarios. Werewolves lose if tanner is executed."
 
     def did_win(
@@ -258,7 +258,7 @@ class Insomniac(ONUWRole):
     def __init__(self):
         super().__init__("Insomniac", wake_order=9)
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "At the end of the night phase, the Insomniac looks at their card to see if it has changed."
 
     def did_win(
@@ -288,7 +288,7 @@ class Thing(ONUWRole):
     def __init__(self):
         super().__init__("Thing", wake_order=4.2)
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "During the night phase, the Thing taps a player next to them in turn order."
 
     def did_win(
@@ -335,7 +335,7 @@ class Doppelganger(ONUWRole):
     def __init__(self):
         super().__init__("Doppelganger", wake_order=1)
 
-    def get_rules(self) -> str:
+    def get_inner_rules(self) -> str:
         return "During the night phase, the Doppelganger looks at another player's card and becomes that card's role, immediately taking it's night action. Essentially there may be 1 more of any role."
 
     def did_win(
@@ -381,7 +381,7 @@ def get_roles_in_game(num_players: int) -> List[Role]:
     global_role_pool = [Werewolf(), Werewolf()]
 
     village_roles = [
-        # Seer(),
+        Seer(),
         Robber(),
         Troublemaker(),
         Tanner(),
