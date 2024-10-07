@@ -9,7 +9,7 @@
         SpeechMessage,
         PromptMessage,
         NextSpeakerMessage,
-        BaseEvent, GameEndedMessage
+        BaseEvent, GameEndedMessage, PromptChoice
     } from '$lib/types';
     import {formatDistanceToNow} from 'date-fns';
     import {Toaster} from "$lib/components/ui/sonner";
@@ -22,7 +22,7 @@
     let username = 'Human';
     let ws: WebSocket;
     let gameState: string | null = null;
-    let choices: string[] = [];
+    let choices: PromptChoice[] = [];
     let numPlayers = 5;
     let isConnected = false;
     let gameId: string | null = localStorage.getItem('gameId');
@@ -116,7 +116,7 @@
             if (codeVerifier) {
                 try {
                     apiKey = await exchangeCodeForKey(code, codeVerifier);
-                    localStorage.setItem('apiKey', apiKey); // Store the API key
+                    localStorage.setItem('apiKey', apiKey!); // Store the API key
                     localStorage.removeItem('code_verifier');
                     // Remove the code from the URL
                     window.history.replaceState({}, document.title, window.location.pathname);
@@ -191,7 +191,7 @@
 
             const data = await response.json();
             gameId = data.gameId;
-            localStorage.setItem('gameId', gameId);
+            localStorage.setItem('gameId', gameId!);
         } catch (error) {
             console.error('Error starting new game:', error);
         }
@@ -268,13 +268,13 @@
                 messages.set([{
                     type: 'game_started',
                     message: `Game started with players: ${msg.players.join(', ')}`,
-                    timestamp: new Date()
+                    timestamp: new Date() as string
                 }]);
                 players = msg.players;
             },
             'game_ended': (msg: GameEndedMessage) => {
                 gameState = 'Game ended';
-                messages.update(msgs => [...msgs, msg]);
+                messages.update(msgs => [...msgs, msg as BaseMessage]);
                 toast(msg.message, {duration: 5000});
             },
             'phase': (msg: PhaseMessage) => {
@@ -441,18 +441,10 @@
     $: console.log("Debug messages", $messages)
 
     let messageContainer: HTMLDivElement;
-    let isScrolledToBottom = true;
 
     function scrollToBottom() {
         if (messageContainer) {
             messageContainer.scrollTop = messageContainer.scrollHeight;
-        }
-    }
-
-    function handleScroll() {
-        if (messageContainer) {
-            const {scrollTop, scrollHeight, clientHeight} = messageContainer;
-            isScrolledToBottom = scrollTop + clientHeight >= scrollHeight - 5;
         }
     }
 
@@ -487,7 +479,7 @@
                 <div>
                     <span>Server: </span>
                     {#if isConnected}
-                        <span text-green-400>Connected</span>
+                        <span class="text-green-400">Connected</span>
                         {#if gameId}
                             <span>to {gameId}</span>
                             <Button on:click={leaveGame}>Leave Game</Button>
@@ -513,7 +505,7 @@
                         {/if}
                     </div>
 
-                    <div bind:this={messageContainer} on:scroll={handleScroll} flex-grow overflow-y-auto bg-dark-800
+                    <div bind:this={messageContainer} flex-grow overflow-y-auto bg-dark-800
                          rounded p-4 mb-4 style="scroll-behavior: smooth;">
                         {#each $messages as {type, username, message, timestamp}, i}
                             {#if username && type === "speech"}
@@ -563,12 +555,12 @@
                                         Submit
                                     </Button>
                                 {:else}
-                                    {#each choices as [value, label], index}
+                                    {#each choices as {index, name}}
                                         <Button on:click={() => {
                                             selectedChoices = [index];
                                             submitChoices();
                                         }}>
-                                            {label}
+                                            {name}
                                         </Button>
                                     {/each}
                                 {/if}
@@ -643,12 +635,6 @@
 
     .interaction-area {
         transition: all 0.3s ease;
-    }
-
-    .interaction-area.prompted {
-        background-color: #2d3748;
-        border: 2px solid #4a5568;
-        box-shadow: 0 0 10px rgba(74, 85, 104, 0.5);
     }
 
     .message {

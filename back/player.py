@@ -89,7 +89,7 @@ class Player:
         )
         response = await self.prompt_with(prompt_message, should_think=True)
 
-        valid_choices = [choice[0] for choice in choices]
+        valid_choices = [choice.index for choice in choices]
         try:
             formatted_answer = response.split("{")[-1]
             words = (
