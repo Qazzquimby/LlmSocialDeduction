@@ -293,7 +293,7 @@ class AIPlayer(Player):
                 prompt, should_think=False, should_rules_check=False
             )
         else:
-            prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Keep it focused on logical reasoning. Be intentional about what you share - don't self incriminate. Try to *accomplish* something with your message, don't pass or be scared of risk. Other players will expect you to tell your role and observations and you will look suspicious if you don't. If you say you're a role, they'll expect you to have the information that role would have. If you say you have information, they will expect your role to back it up. Don't say you have a hunch or feeling, make claims."
+            prompt += "What would you like to say to the other players? After thinking, enter your message between curly brackets like {This is my message.} Focus on showing reasoning to be convincing, usually 1-3 sentences. Be intentional about what you share - don't self incriminate. Try to *accomplish* something with your message, don't pass or be scared of risk. Players expect you to tell your role and observations, and you will look suspicious if you don't. If you say you're a role, they'll expect you to have the information that role would have. If you say you have information, they will expect your role to back it up. Don't say you have a hunch or feeling, make solid claims."
             response = await self.prompt_with(
                 prompt, should_think=True, should_rules_check=True
             )

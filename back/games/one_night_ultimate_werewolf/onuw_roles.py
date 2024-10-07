@@ -44,7 +44,7 @@ class Werewolf(ONUWRole):
 
     def get_general_strategy_lines(self) -> List[str]:
         return [
-            "Generally, it is best to claim Village roles that gain no or little information, like Troublemaker",
+            "Generally, it is best to claim Village roles that gain no or little information, so there's less room to contradict you.",
             "You should be spreading misinformation whenever possible if you don't think you'll be contradicted. Whenever you have real information, like knowing a center card, don't share it unless someone else will back it up and make you look trustworthy.",
             "Werewolves need to care more about causing confusion than figuring out other's roles.",
             "If you're a solo werewolf you learn one of the center roles, which is probably safe to claim to be. ",
