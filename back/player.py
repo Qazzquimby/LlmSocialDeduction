@@ -394,7 +394,7 @@ class AIPlayer(Player):
             litellm_prompt=Prompt().add_message(prompt, role="system")
         )
 
-        error_found = "no errors found" in response.lower()
+        error_found = "no errors found" not in response.lower()
 
         if error_found:
             part_to_share = response.split("{")[-1]
