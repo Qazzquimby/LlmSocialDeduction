@@ -1,7 +1,7 @@
 import random
 from typing import List, TYPE_CHECKING, Optional
 
-from message_types import ObservationMessage
+from message_types import ObservationMessage, PromptChoice
 from roles import Role, RoleInteraction
 
 if TYPE_CHECKING:
@@ -103,8 +103,8 @@ class Seer(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        choices = [(0, "Look at two center cards")] + [
-            (i, f"Look at {p.name}'s card")
+        choices = [PromptChoice(index=0, name="Look at two center cards")] + [
+            PromptChoice(index=i, name=f"Look at {p.name}'s card")
             for i, p in enumerate(players, 1)
             if p != player
         ]
@@ -153,7 +153,11 @@ class Robber(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        choices = [(i, f"Rob {p.name}") for i, p in enumerate(players) if p != player]
+        choices = [
+            PromptChoice(index=i, name=f"Rob {p.name}")
+            for i, p in enumerate(players)
+            if p != player
+        ]
         prompt = f"Choose a player to rob:"
         choice = await player.get_choice(prompt, choices)
 
@@ -189,7 +193,11 @@ class Troublemaker(ONUWRole):
 
     async def night_action(self, player: "Player", game_state: "GameState") -> str:
         players = game_state.players
-        legal_choices = [(i, p.name) for i, p in enumerate(players) if p != player]
+        legal_choices = [
+            PromptChoice(index=i, name=p.name)
+            for i, p in enumerate(players)
+            if p != player
+        ]
         prompt = f"Choose two players to swap roles:"
         choices = await player.get_choice(
             prompt, legal_choices, choose_multiple=True, min_choices=2, max_choices=2
@@ -315,7 +323,10 @@ class Thing(ONUWRole):
             game_state.players[previous_index],
             game_state.players[next_index],
         ]
-        legal_choices = [(i, f"Tap {p.name}") for i, p in enumerate(adjacent_players)]
+        legal_choices = [
+            PromptChoice(index=i, name=f"Tap {p.name}")
+            for i, p in enumerate(adjacent_players)
+        ]
 
         choices = await player.get_choice(
             "choose an adjacent player to tap: ", legal_choices
@@ -354,7 +365,9 @@ class Doppelganger(ONUWRole):
     ) -> Optional[str]:
         players = game_state.players
         legal_choices = [
-            (i, f"Copy {p.name}") for i, p in enumerate(players) if p != player
+            PromptChoice(index=i, name=f"Copy {p.name}")
+            for i, p in enumerate(players)
+            if p != player
         ]
         choices = await player.get_choice(
             prompt="Choose a player to copy their role:", choices=legal_choices

@@ -1,3 +1,4 @@
+from aiohttp.web_response import BaseClass
 from pydantic import BaseModel
 from typing import Optional, List, Literal
 
@@ -51,9 +52,14 @@ class SpeechMessage(BaseMessage):
         return f"{self.username}: {self.message}"
 
 
+class PromptChoice(BaseModel):
+    index: int
+    name: str
+
+
 class PromptMessage(BaseMessage):
     type: Literal["prompt"] = "prompt"
-    choices: Optional[List[tuple[int, str]]] = None
+    choices: Optional[List[PromptChoice]] = None
     multiple: bool = False
     min_choices: int = 1
     max_choices: Optional[int] = None
@@ -63,7 +69,7 @@ class PromptMessage(BaseMessage):
         prompt_text = self.message
         if self.choices:
             prompt_text += "\nChoices:\n" + "\n".join(
-                [f"{i}: {choice}" for i, choice in self.choices]
+                [f"{choice.index}: {choice.name}" for choice in self.choices]
             )
         if self.multiple:
             prompt_text += f"\nYou can select multiple choices (min: {self.min_choices}, max: {self.max_choices or 'unlimited'})."

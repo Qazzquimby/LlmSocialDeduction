@@ -11,6 +11,7 @@ from message_types import (
     RulesError,
     PromptMessage,
     SpeechMessage,
+    PromptChoice,
 )
 from typing import List
 from core import Prompt
@@ -63,7 +64,10 @@ class Player:
             other_player for other_player in players if other_player != self
         ]
         question = "Which player do you want to vote to execute?"
-        choices = [(i, player.name) for i, player in enumerate(other_players)]
+        choices = [
+            PromptChoice(index=i, name=player.name)
+            for i, player in enumerate(other_players)
+        ]
 
         vote = await self.get_choice(question, choices)
         return other_players[vote[0]]
@@ -71,7 +75,7 @@ class Player:
     async def get_choice(
         self,
         prompt: str,
-        choices: List[Tuple[int, str]],
+        choices: List[PromptChoice],
         choose_multiple=False,
         min_choices=1,
         max_choices=None,
@@ -123,7 +127,12 @@ class Player:
             return random_choice_numbers
 
     def make_choice_prompt(
-        self, prompt, choices, choose_multiple, min_choices, max_choices
+        self,
+        prompt,
+        choices: List[PromptChoice],
+        choose_multiple,
+        min_choices,
+        max_choices,
     ):
         return PromptMessage(
             message=prompt,
@@ -222,7 +231,7 @@ class WebHumanPlayer(HumanPlayer):
     async def wait_for_ready(self):
         ready_prompt = PromptMessage(
             message="",
-            choices=[(1, "Start Game")],
+            choices=[PromptChoice(index=1, name="Start Game")],
         )
         await websocket_manager.get_input(self.user_id, ready_prompt, timeout=None)
 
@@ -414,7 +423,12 @@ class AIPlayer(Player):
         return f"Mock response."
 
     def make_choice_prompt(
-        self, prompt, choices, choose_multiple, min_choices, max_choices
+        self,
+        prompt,
+        choices: List[PromptChoice],
+        choose_multiple,
+        min_choices,
+        max_choices,
     ):
         choice_prompt = prompt + "\n"
 

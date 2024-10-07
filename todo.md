@@ -10,18 +10,12 @@ buttons.
 
 Todo:
 
-# AI:
-Optimize message history to shorten. Eg remove their past speechs from history since they already see the my_action event
-
-Do rules error checking before sending and allow them to change their answer
-
-
-# Nice things
 Nice formatting on the rules stuff, less of a wall of text. Organize it.
 
-Let the user see the AI's thought processes post game.
+# Nice things
+? Let the user see the AI's thought processes post game.
 
-Folding sections, to hide rules.
+(Nah) Folding sections, to hide rules.
 
 # Unconfirmed:
 On a ws reconnect, the server somehow got a message from Human which I didn't write. It was a duplicate of the previous message.
@@ -33,6 +27,8 @@ On a ws reconnect, the server somehow got a message from Human which I didn't wr
 Sometimes messages dont arrive until I refresh. Usually the chat just says "No active games"
 
 # A bit ugly but less critical:
+Messages come from the future
+
 Refreshing seems to shuffle messages a bit. Usually a speech message appears up with the rules at the top.
 
 Human connects many times at once in logs. On disconnecting they all disconnect.

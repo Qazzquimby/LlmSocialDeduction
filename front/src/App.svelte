@@ -547,13 +547,13 @@
                             <div class="choices-container">
                                 <p>{$messages[$messages.length - 1].message}</p>
                                 {#if multipleChoices}
-                                    {#each choices as [value, label]}
+                                    {#each choices as {index, name}}
                                         <label class="checkbox-container">
                                             <input type="checkbox" 
-                                                   checked={selectedChoices.includes(value)}
-                                                   on:change={() => toggleChoice(value)}
+                                                   checked={selectedChoices.includes(index)}
+                                                   on:change={() => toggleChoice(index)}
                                             />
-                                            {label}
+                                            {name}
                                         </label>
                                     {/each}
                                     <Button

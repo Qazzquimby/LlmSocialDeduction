@@ -65,12 +65,16 @@ export interface PlayerActionMessage {
   player: string;
   action: string;
 }
+export interface PromptChoice {
+  index: number;
+  name: string;
+}
 export interface PromptMessage {
   type?: "prompt";
   message: string;
   username?: string;
   timestamp?: string;
-  choices?: [unknown, unknown][] | null;
+  choices?: PromptChoice[] | null;
   multiple?: boolean;
   min_choices?: number;
   max_choices?: number | null;
