@@ -352,11 +352,19 @@ class AIPlayer(Player):
         )
 
         if should_rules_check:
-            await self.check_rules(response)
+            error_found = await self.check_rules(response)
+            if error_found:
+                new_prompt = (
+                    "\n\nDue to the previous possible rules error, you are given a chance to rethink your action. You can make the same decision if you believe you were correct."
+                    + prompt_text
+                )
+                response = await self.prompt_with(
+                    prompt=new_prompt, should_think=True, should_rules_check=False
+                )
 
         return response
 
-    async def check_rules(self, message: str) -> None:
+    async def check_rules(self, message: str) -> bool:
         rules = get_rules(self.game.state.role_pool)
         prompt = f"""
         You are a Rules Genie for a social deduction game. 
@@ -377,7 +385,9 @@ class AIPlayer(Player):
             litellm_prompt=Prompt().add_message(prompt, role="system")
         )
 
-        if "No errors found" not in response:
+        error_found = "no errors found" in response.lower()
+
+        if error_found:
             part_to_share = response.split("{")[-1]
             part_to_share = part_to_share.replace("}", "")
             await self.observe(
@@ -388,6 +398,7 @@ class AIPlayer(Player):
                     ),
                 )
             )
+        return error_found
 
     async def prompt_model(self, litellm_prompt: Prompt):
         if self.use_mock_api:
