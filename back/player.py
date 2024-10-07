@@ -10,6 +10,7 @@ from message_types import (
     PlayerActionMessage,
     RulesError,
     PromptMessage,
+    SpeechMessage,
 )
 from typing import List
 from core import Prompt
@@ -316,6 +317,13 @@ class AIPlayer(Player):
         litellm_prompt.add_message(rules, role="system")
 
         for observation in self.observations:
+            if (
+                isinstance(observation, SpeechMessage)
+                and observation.username == self.name
+            ):
+                # skip messages from self
+                continue
+
             if isinstance(observation, BaseMessage):
                 litellm_prompt = litellm_prompt.add_message(
                     observation.ai_friendly_message, role="system"
